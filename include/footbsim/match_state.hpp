@@ -2,6 +2,7 @@
 
 #include "footbsim/events.hpp"
 
+#include <string>
 #include <vector>
 
 namespace footbsim
@@ -27,6 +28,9 @@ namespace footbsim
     TeamMatchState home_state;
     TeamMatchState away_state;
     std::vector<MatchEvent> log;
+
+    // Prints the full event log followed by a summary stat table to stdout.
+    void PrintLog(const std::string& homeName, const std::string& awayName) const;
   };
 
 } // namespace footbsim

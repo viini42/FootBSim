@@ -142,4 +142,51 @@ namespace footbsim::messages
     return team + " chuta para fora";
   }
 
+  // ---- Match summary (header, scoreline, stat-table labels) ---------------
+
+  inline std::string Versus()
+  {
+    return "x";
+  }
+
+  inline std::string
+  FinalScore(const std::string& homeTeam, int homeGoals, const std::string& awayTeam, int awayGoals)
+  {
+    return "Resultado final: " + homeTeam + " " + std::to_string(homeGoals) + " - " +
+           std::to_string(awayGoals) + " " + awayTeam;
+  }
+
+  inline std::string StatColumnHeader()
+  {
+    return "Estatística";
+  }
+  inline std::string PossessionLabel()
+  {
+    return "Posse de bola %";
+  }
+  inline std::string ShotsLabel()
+  {
+    return "Chutes";
+  }
+  inline std::string ShotsOnTargetLabel()
+  {
+    return "Chutes a gol";
+  }
+  inline std::string CornersLabel()
+  {
+    return "Escanteios";
+  }
+  inline std::string FoulsLabel()
+  {
+    return "Faltas";
+  }
+  inline std::string YellowCardsLabel()
+  {
+    return "Cartões amarelos";
+  }
+  inline std::string RedCardsLabel()
+  {
+    return "Cartões vermelhos";
+  }
+
 } // namespace footbsim::messages
