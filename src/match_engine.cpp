@@ -76,7 +76,10 @@ namespace footbsim
 
   double DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness)
   {
-    return Sigmoid(steepness * (effectiveAttacker - effectiveDefender));
+    const double gap = effectiveAttacker - effectiveDefender;
+    const double compressed_gap =
+      std::copysign(std::pow(std::abs(gap), tuning::DUEL_GAP_COMPRESSION_EXPONENT), gap);
+    return Sigmoid(steepness * compressed_gap);
   }
 
   // ---- Engine ---------------------------------------------------------------

@@ -1,7 +1,7 @@
+#include "brasileirao_2025.hpp"
 #include "footbsim/match_context.hpp"
 #include "footbsim/match_engine.hpp"
 #include "footbsim/team_stats.hpp"
-#include "brasileirao_2025.hpp"
 
 #include <cstdint>
 #include <optional>

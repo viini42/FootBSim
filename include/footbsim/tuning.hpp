@@ -21,10 +21,24 @@ namespace footbsim::tuning
   // the outcome more often. Kept separate per contest because the same
   // gap size shouldn't necessarily matter equally at kickoff, in open
   // play, and in front of goal.
-  constexpr double KICKOFF_DUEL_STEEPNESS = 0.055; // who starts with the ball
+  //
+  // Before feeding into the sigmoid, the raw stat gap is first compressed
+  // by DUEL_GAP_COMPRESSION_EXPONENT (gap -> sign(gap) * |gap|^exponent).
+  // With an exponent < 1, small gaps lose relatively little magnitude but
+  // large gaps get compressed hard -- e.g. at 0.7, a gap of 5 shrinks to
+  // ~3.1 (62%) while a gap of 50 shrinks to ~15.5 (31%). This exists
+  // because a single linear steepness can't tell "slightly ahead on every
+  // stat" apart from "wildly ahead": both are just "some gap size", and
+  // the engine's own per-minute duel repetition (~90 independent rolls a
+  // match) turns even a linearly-modest gap into near-certainty by full
+  // time. Compression lets genuinely small gaps (like home advantage)
+  // keep mattering while genuinely large ones stop running away to 100%.
+  constexpr double DUEL_GAP_COMPRESSION_EXPONENT = 0.7;
+
+  constexpr double KICKOFF_DUEL_STEEPNESS = 0.09; // who starts with the ball
   constexpr double ZONE_DUEL_STEEPNESS =
-    0.045; // midfield advance & attacking-zone pressure (DuelProbability's default)
-  constexpr double GOAL_DUEL_STEEPNESS = 0.045; // shot -> goal conversion
+    0.058; // midfield advance & attacking-zone pressure (DuelProbability's default)
+  constexpr double GOAL_DUEL_STEEPNESS = 0.058; // shot -> goal conversion
 
   // ---- Possession flow ---------------------------------------------------
   // How readily a team in a phase of play pushes forward rather than just
