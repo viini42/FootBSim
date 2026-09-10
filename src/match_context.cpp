@@ -41,6 +41,22 @@ namespace footbsim
     return tuning::REFEREE_STYLE_BALANCED;
   }
 
+  double TravelFatiguePenalty(TravelFatigueLevel level)
+  {
+    switch (level)
+    {
+    case TravelFatigueLevel::SAME_CITY:
+      return tuning::TRAVEL_FATIGUE_SAME_CITY;
+    case TravelFatigueLevel::DIFFERENT_REGION:
+      return tuning::TRAVEL_FATIGUE_DIFFERENT_REGION;
+    case TravelFatigueLevel::DIFFERENT_STATE:
+      return tuning::TRAVEL_FATIGUE_DIFFERENT_STATE;
+    case TravelFatigueLevel::DIFFERENT_COUNTRY:
+      return tuning::TRAVEL_FATIGUE_DIFFERENT_COUNTRY;
+    }
+    return tuning::TRAVEL_FATIGUE_SAME_CITY;
+  }
+
   double WeatherAccuracyFactor(Weather weather, double severity)
   {
     const double s = std::clamp(severity, 0.0, 1.0);

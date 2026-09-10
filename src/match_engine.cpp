@@ -100,8 +100,9 @@ namespace footbsim
     const TeamStats& possessing = homeHasBall ? m_home : m_away;
     const TeamStats& defending = homeHasBall ? m_away : m_home;
 
-    const double travel_penalty_possessing = homeHasBall ? 0.0 : m_context.travel_fatigue;
-    const double travel_penalty_defending = homeHasBall ? m_context.travel_fatigue : 0.0;
+    const double travel_penalty = TravelFatiguePenalty(m_context.travel_fatigue);
+    const double travel_penalty_possessing = homeHasBall ? 0.0 : travel_penalty;
+    const double travel_penalty_defending = homeHasBall ? travel_penalty : 0.0;
 
     const double stam_poss =
       StaminaDecayFactor(possessing.stamina - travel_penalty_possessing, minute);

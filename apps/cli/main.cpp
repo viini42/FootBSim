@@ -64,7 +64,7 @@ int main(int argc, char** argv)
   context.weather = footbsim::Weather::CLEAR;
   context.referee_strictness = footbsim::RefereeStyle::STRICT;
   context.stakes = footbsim::Stakes::NORMAL;
-  context.travel_fatigue = 5.0;
+  context.travel_fatigue = footbsim::TravelFatigueLevel::DIFFERENT_STATE;
 
   footbsim::MatchEngine engine(home, away, context, seed);
   const footbsim::MatchResult result = engine.Simulate();

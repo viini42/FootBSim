@@ -3,6 +3,7 @@
 
 using footbsim::HomeAdvantageLevel;
 using footbsim::RefereeStyle;
+using footbsim::TravelFatigueLevel;
 
 FOOTBSIM_TEST(home_advantage_none_applies_no_boost)
 {
@@ -38,4 +39,33 @@ FOOTBSIM_TEST(referee_strictness_multiplier_increases_with_style)
   FOOTBSIM_CHECK(lenient < balanced);
   FOOTBSIM_CHECK(balanced < strict);
   FOOTBSIM_CHECK(strict < very_strict);
+}
+
+FOOTBSIM_TEST(travel_fatigue_same_city_applies_no_penalty)
+{
+  FOOTBSIM_CHECK(footbsim::TravelFatiguePenalty(TravelFatigueLevel::SAME_CITY) == 0.0);
+}
+
+FOOTBSIM_TEST(travel_fatigue_penalty_increases_with_distance)
+{
+  // A different state (a neighboring state, same region) is a shorter trip
+  // than a different region (which spans multiple states), so the penalty
+  // ordering is state < region here, not alphabetical/declaration order.
+  const double same_city = footbsim::TravelFatiguePenalty(TravelFatigueLevel::SAME_CITY);
+  const double state = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_STATE);
+  const double region = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_REGION);
+  const double country = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_COUNTRY);
+
+  FOOTBSIM_CHECK(same_city < state);
+  FOOTBSIM_CHECK(state < region);
+  FOOTBSIM_CHECK(region < country);
+}
+
+FOOTBSIM_TEST(travel_fatigue_stays_a_small_nudge_even_at_its_largest)
+{
+  // This is meant as light seasoning on the simulation, not a dominant
+  // factor -- guard against it creeping up into something that swings
+  // matches on its own.
+  const double country = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_COUNTRY);
+  FOOTBSIM_CHECK(country <= 15.0);
 }
