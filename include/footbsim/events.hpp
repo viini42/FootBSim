@@ -34,6 +34,4 @@ namespace footbsim
     std::string description;
   };
 
-  std::string ToString(EventType type);
-
 } // namespace footbsim

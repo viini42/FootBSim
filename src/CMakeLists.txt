@@ -1,6 +1,5 @@
 add_library(footbsim_core STATIC
     match_context.cpp
-    events.cpp
     rng.cpp
     match_engine.cpp
 )

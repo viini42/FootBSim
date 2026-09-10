@@ -1,5 +1,6 @@
 #include "footbsim/match_context.hpp"
 #include "footbsim/match_engine.hpp"
+#include "footbsim/messages.hpp"
 #include "footbsim/team_stats.hpp"
 
 #include <cstdint>
@@ -74,7 +75,7 @@ int main(int argc, char** argv)
   for (const footbsim::MatchEvent& event : result.log)
   {
     std::cout << "[" << std::setw(2) << std::setfill('0') << event.minute << std::setfill(' ')
-              << "'] " << ToString(event.type);
+              << "'] " << footbsim::messages::EventTypeLabel(event.type);
     if (!event.team.empty())
     {
       std::cout << " (" << event.team << ")";

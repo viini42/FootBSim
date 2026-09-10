@@ -1,5 +1,6 @@
 #include "footbsim/match_engine.hpp"
 
+#include "footbsim/messages.hpp"
 #include "footbsim/tuning.hpp"
 
 #include <algorithm>
@@ -155,7 +156,7 @@ namespace footbsim
                            EventType::FOUL,
                            defending.name,
                            PitchZone::MIDFIELD,
-                           defending.name + " concede a foul" });
+                           messages::ConcedeFoul(defending.name) });
 
     const double p_card = std::clamp(tuning::CARD_BASE_RATE *
                                        RefereeStrictnessMultiplier(m_context.referee_strictness) *
@@ -175,12 +176,10 @@ namespace footbsim
     {
       def_state.red_cards++;
       def_state.has_red_card = true;
-      const char* reason = second_yellow ? "second yellow" : "straight red";
-      result.log.push_back({ minute,
-                             EventType::RED_CARD,
-                             defending.name,
-                             PitchZone::MIDFIELD,
-                             defending.name + " sent off (" + reason + ")" });
+      const std::string description = second_yellow ? messages::SentOffSecondYellow(defending.name)
+                                                    : messages::SentOffStraightRed(defending.name);
+      result.log.push_back(
+        { minute, EventType::RED_CARD, defending.name, PitchZone::MIDFIELD, description });
     }
     else
     {
@@ -189,7 +188,7 @@ namespace footbsim
                              EventType::YELLOW_CARD,
                              defending.name,
                              PitchZone::MIDFIELD,
-                             defending.name + " booked" });
+                             messages::Booked(defending.name) });
     }
   }
 
@@ -210,7 +209,7 @@ namespace footbsim
                              EventType::PASS,
                              possessing.name,
                              zone,
-                             possessing.name + " advance into the attacking third" });
+                             messages::AdvanceToAttackingThird(possessing.name) });
     }
     else if (roll < p_advance)
     {
@@ -218,7 +217,7 @@ namespace footbsim
                              EventType::PASS,
                              possessing.name,
                              zone,
-                             possessing.name + " keep possession in midfield" });
+                             messages::KeepPossessionInMidfield(possessing.name) });
     }
     else
     {
@@ -229,7 +228,7 @@ namespace footbsim
                              EventType::TURNOVER,
                              new_possessor.name,
                              zone,
-                             new_possessor.name + " win the ball back in midfield" });
+                             messages::WinBallBackInMidfield(new_possessor.name) });
     }
   }
 
@@ -254,7 +253,7 @@ namespace footbsim
                              EventType::TURNOVER,
                              defending.name,
                              zone,
-                             defending.name + " clear their lines" });
+                             messages::ClearLines(defending.name) });
       return;
     }
 
@@ -265,22 +264,25 @@ namespace footbsim
       if (m_rng.Bernoulli(tuning::PROBE_CORNER_CHANCE))
       {
         poss_state.corners++;
-        result.log.push_back(
-          { minute, EventType::CORNER, possessing.name, zone, possessing.name + " win a corner" });
+        result.log.push_back({ minute,
+                               EventType::CORNER,
+                               possessing.name,
+                               zone,
+                               messages::WinCorner(possessing.name) });
         return;
       }
       result.log.push_back({ minute,
                              EventType::PASS,
                              possessing.name,
                              zone,
-                             possessing.name + " probe for an opening" });
+                             messages::ProbeForOpening(possessing.name) });
       return;
     }
 
     // A shot happens.
     poss_state.shots++;
     result.log.push_back(
-      { minute, EventType::SHOT, possessing.name, zone, possessing.name + " take a shot" });
+      { minute, EventType::SHOT, possessing.name, zone, messages::TakeShot(possessing.name) });
 
     const double p_goal =
       DuelProbability(eff.possessing_attack, eff.defending_defense, tuning::GOAL_DUEL_STEEPNESS) *
@@ -292,7 +294,7 @@ namespace footbsim
       poss_state.shots_on_target++;
       poss_state.goals++;
       result.log.push_back(
-        { minute, EventType::GOAL, possessing.name, zone, "GOAL for " + possessing.name + "!" });
+        { minute, EventType::GOAL, possessing.name, zone, messages::Goal(possessing.name) });
       homeHasBall = !homeHasBall;
       zone = PitchZone::MIDFIELD;
       return;
@@ -304,13 +306,16 @@ namespace footbsim
       if (m_rng.Bernoulli(tuning::SAVE_CORNER_CHANCE))
       {
         poss_state.corners++;
-        result.log.push_back(
-          { minute, EventType::CORNER, possessing.name, zone, possessing.name + " win a corner" });
+        result.log.push_back({ minute,
+                               EventType::CORNER,
+                               possessing.name,
+                               zone,
+                               messages::WinCorner(possessing.name) });
         // Stay in the attacking zone; corner delivery resolves next tick.
         return;
       }
       result.log.push_back(
-        { minute, EventType::SAVE, defending.name, zone, defending.name + " keeper makes a save" });
+        { minute, EventType::SAVE, defending.name, zone, messages::KeeperSave(defending.name) });
       homeHasBall = !homeHasBall;
       zone = PitchZone::MIDFIELD;
       return;
@@ -319,12 +324,15 @@ namespace footbsim
     if (shot_roll < p_goal + tuning::SAVE_BAND + tuning::BLOCK_BAND)
     {
       result.log.push_back(
-        { minute, EventType::BLOCK, defending.name, zone, defending.name + " block the shot" });
+        { minute, EventType::BLOCK, defending.name, zone, messages::BlockShot(defending.name) });
       if (m_rng.Bernoulli(tuning::BLOCK_CORNER_CHANCE))
       {
         poss_state.corners++;
-        result.log.push_back(
-          { minute, EventType::CORNER, possessing.name, zone, possessing.name + " win a corner" });
+        result.log.push_back({ minute,
+                               EventType::CORNER,
+                               possessing.name,
+                               zone,
+                               messages::WinCorner(possessing.name) });
         return;
       }
       homeHasBall = !homeHasBall;
@@ -333,7 +341,7 @@ namespace footbsim
     }
 
     result.log.push_back(
-      { minute, EventType::MISS, possessing.name, zone, possessing.name + " shot goes wide" });
+      { minute, EventType::MISS, possessing.name, zone, messages::ShotWide(possessing.name) });
     homeHasBall = !homeHasBall;
     zone = PitchZone::MIDFIELD;
   }
@@ -341,7 +349,7 @@ namespace footbsim
   MatchResult MatchEngine::Simulate()
   {
     MatchResult result;
-    result.log.push_back({ 0, EventType::KICKOFF, "", PitchZone::MIDFIELD, "Kickoff" });
+    result.log.push_back({ 0, EventType::KICKOFF, "", PitchZone::MIDFIELD, messages::Kickoff() });
 
     bool home_has_ball = DecideFirstPossession();
     PitchZone zone = PitchZone::MIDFIELD;
@@ -350,7 +358,7 @@ namespace footbsim
     {
       if (minute == 45)
       {
-        result.log.push_back({ 45, EventType::HALF_TIME, "", zone, "Half-time" });
+        result.log.push_back({ 45, EventType::HALF_TIME, "", zone, messages::HalfTime() });
       }
 
       TeamMatchState& poss_state = home_has_ball ? result.home_state : result.away_state;
@@ -385,7 +393,7 @@ namespace footbsim
       }
     }
 
-    result.log.push_back({ 90, EventType::FULL_TIME, "", zone, "Full-time" });
+    result.log.push_back({ 90, EventType::FULL_TIME, "", zone, messages::FullTime() });
     result.home_goals = result.home_state.goals;
     result.away_goals = result.away_state.goals;
     return result;
