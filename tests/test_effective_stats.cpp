@@ -1,10 +1,11 @@
 #include "footbsim/match_engine.hpp"
 #include "footbsim/team_stats.hpp"
-#include "micro_test.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 using footbsim::TeamStats;
 
-FOOTBSIM_TEST(higher_attack_stat_yields_higher_effective_attack)
+TEST_CASE("higher attack stat yields higher effective attack", "[effective_stats]")
 {
   TeamStats weak;
   weak.attack = 40;
@@ -21,10 +22,10 @@ FOOTBSIM_TEST(higher_attack_stat_yields_higher_effective_attack)
                                                     /*moraleNoise=*/0.0);
   const double eff_strong = footbsim::EffectiveAttack(strong, 1.0, 1.0, 1.0, 1.0, 0.0);
 
-  FOOTBSIM_CHECK(eff_strong > eff_weak);
+  CHECK(eff_strong > eff_weak);
 }
 
-FOOTBSIM_TEST(stamina_decay_reduces_effective_stats_over_the_match)
+TEST_CASE("stamina decay reduces effective stats over the match", "[effective_stats][stamina]")
 {
   TeamStats stats;
   stats.attack = 70;
@@ -33,22 +34,22 @@ FOOTBSIM_TEST(stamina_decay_reduces_effective_stats_over_the_match)
   const double early = footbsim::StaminaDecayFactor(stats.stamina, /*minute=*/5);
   const double late = footbsim::StaminaDecayFactor(stats.stamina, /*minute=*/90);
 
-  FOOTBSIM_CHECK(late <= early);
+  CHECK(late <= early);
 
   const double eff_early = footbsim::EffectiveAttack(stats, early, 1.0, 1.0, 1.0, 0.0);
   const double eff_late = footbsim::EffectiveAttack(stats, late, 1.0, 1.0, 1.0, 0.0);
-  FOOTBSIM_CHECK(eff_late <= eff_early);
+  CHECK(eff_late <= eff_early);
 }
 
-FOOTBSIM_TEST(poor_stamina_teams_decay_faster_than_fit_teams)
+TEST_CASE("poor stamina teams decay faster than fit teams", "[stamina]")
 {
   const double fit_decay = footbsim::StaminaDecayFactor(/*baseStamina=*/95.0, /*minute=*/90);
   const double tired_decay = footbsim::StaminaDecayFactor(/*baseStamina=*/40.0, /*minute=*/90);
 
-  FOOTBSIM_CHECK(tired_decay < fit_decay);
+  CHECK(tired_decay < fit_decay);
 }
 
-FOOTBSIM_TEST(home_advantage_multiplier_increases_effective_attack)
+TEST_CASE("home advantage multiplier increases effective attack", "[effective_stats][home_advantage]")
 {
   TeamStats stats;
   stats.attack = 60;
@@ -57,10 +58,10 @@ FOOTBSIM_TEST(home_advantage_multiplier_increases_effective_attack)
   const double neutral = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.0, 1.0, 1.0, 0.0);
   const double boosted = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.15, 1.0, 1.0, 0.0);
 
-  FOOTBSIM_CHECK(boosted > neutral);
+  CHECK(boosted > neutral);
 }
 
-FOOTBSIM_TEST(weather_penalty_reduces_effective_attack_but_not_below_floor)
+TEST_CASE("weather penalty reduces effective attack but not below floor", "[effective_stats][weather]")
 {
   TeamStats stats;
   stats.attack = 50;
@@ -69,37 +70,34 @@ FOOTBSIM_TEST(weather_penalty_reduces_effective_attack_but_not_below_floor)
   const double clear = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/1.0, 1.0, 0.0);
   const double stormy = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/0.8, 1.0, 0.0);
 
-  FOOTBSIM_CHECK(stormy < clear);
-  FOOTBSIM_CHECK(stormy >= 1.0); // floor enforced by std::max in EffectiveAttack
+  CHECK(stormy < clear);
+  CHECK(stormy >= 1.0); // floor enforced by std::max in EffectiveAttack
 }
 
-FOOTBSIM_TEST(aggression_trades_off_attack_against_defense)
+TEST_CASE("aggression trades off attack against defense", "[aggression]")
 {
   // Neutral aggression (50) leaves both factors unchanged.
-  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(50.0) == 1.0);
-  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(50.0) == 1.0);
+  CHECK(footbsim::AggressionAttackFactor(50.0) == 1.0);
+  CHECK(footbsim::AggressionDefenseFactor(50.0) == 1.0);
 
   // Attacking tactics (aggression -> 100) boost attack but weaken defense.
-  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(100.0) > 1.0);
-  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(100.0) < 1.0);
+  CHECK(footbsim::AggressionAttackFactor(100.0) > 1.0);
+  CHECK(footbsim::AggressionDefenseFactor(100.0) < 1.0);
 
   // Defensive tactics (aggression -> 0) do the reverse.
-  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(0.0) < 1.0);
-  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(0.0) > 1.0);
+  CHECK(footbsim::AggressionAttackFactor(0.0) < 1.0);
+  CHECK(footbsim::AggressionDefenseFactor(0.0) > 1.0);
 }
 
-FOOTBSIM_TEST(aggression_factors_stay_bounded_for_out_of_range_input)
+TEST_CASE("aggression factors stay bounded for out-of-range input", "[aggression]")
 {
-  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(-50.0) == footbsim::AggressionAttackFactor(0.0));
-  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(200.0) ==
-                 footbsim::AggressionAttackFactor(100.0));
+  CHECK(footbsim::AggressionAttackFactor(-50.0) == footbsim::AggressionAttackFactor(0.0));
+  CHECK(footbsim::AggressionAttackFactor(200.0) == footbsim::AggressionAttackFactor(100.0));
 }
 
-FOOTBSIM_TEST(aggression_pressure_factor_increases_with_aggression)
+TEST_CASE("aggression pressure factor increases with aggression", "[aggression]")
 {
-  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(50.0) == 1.0);
-  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(100.0) >
-                 footbsim::AggressionPressureFactor(50.0));
-  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(0.0) <
-                 footbsim::AggressionPressureFactor(50.0));
+  CHECK(footbsim::AggressionPressureFactor(50.0) == 1.0);
+  CHECK(footbsim::AggressionPressureFactor(100.0) > footbsim::AggressionPressureFactor(50.0));
+  CHECK(footbsim::AggressionPressureFactor(0.0) < footbsim::AggressionPressureFactor(50.0));
 }

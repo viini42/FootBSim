@@ -1,7 +1,8 @@
 #include "footbsim/match_context.hpp"
 #include "footbsim/match_engine.hpp"
 #include "footbsim/team_stats.hpp"
-#include "micro_test.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 using footbsim::MatchContext;
 using footbsim::MatchEngine;
@@ -27,7 +28,7 @@ namespace
 
 } // namespace
 
-FOOTBSIM_TEST(seeded_match_completes_and_produces_a_sane_scoreline)
+TEST_CASE("seeded match completes and produces a sane scoreline", "[engine][smoke]")
 {
   const TeamStats home = MakeTeam("Home FC");
   const TeamStats away = MakeTeam("Away FC");
@@ -36,20 +37,20 @@ FOOTBSIM_TEST(seeded_match_completes_and_produces_a_sane_scoreline)
   MatchEngine engine(home, away, context, /*seed=*/42);
   const MatchResult result = engine.Simulate();
 
-  FOOTBSIM_CHECK(!result.log.empty());
-  FOOTBSIM_CHECK(result.log.front().type == footbsim::EventType::KICKOFF);
-  FOOTBSIM_CHECK(result.log.back().type == footbsim::EventType::FULL_TIME);
+  CHECK_FALSE(result.log.empty());
+  CHECK(result.log.front().type == footbsim::EventType::KICKOFF);
+  CHECK(result.log.back().type == footbsim::EventType::FULL_TIME);
 
-  FOOTBSIM_CHECK(result.home_goals >= 0);
-  FOOTBSIM_CHECK(result.away_goals >= 0);
-  FOOTBSIM_CHECK(result.home_goals < 15); // sanity ceiling, not a real rule
-  FOOTBSIM_CHECK(result.away_goals < 15);
+  CHECK(result.home_goals >= 0);
+  CHECK(result.away_goals >= 0);
+  CHECK(result.home_goals < 15); // sanity ceiling, not a real rule
+  CHECK(result.away_goals < 15);
 
-  FOOTBSIM_CHECK(result.home_goals == result.home_state.goals);
-  FOOTBSIM_CHECK(result.away_goals == result.away_state.goals);
+  CHECK(result.home_goals == result.home_state.goals);
+  CHECK(result.away_goals == result.away_state.goals);
 }
 
-FOOTBSIM_TEST(same_seed_produces_identical_results)
+TEST_CASE("same seed produces identical results", "[engine][smoke]")
 {
   const TeamStats home = MakeTeam("Home FC");
   const TeamStats away = MakeTeam("Away FC");
@@ -61,12 +62,12 @@ FOOTBSIM_TEST(same_seed_produces_identical_results)
   const MatchResult a = engine_a.Simulate();
   const MatchResult b = engine_b.Simulate();
 
-  FOOTBSIM_CHECK(a.home_goals == b.home_goals);
-  FOOTBSIM_CHECK(a.away_goals == b.away_goals);
-  FOOTBSIM_CHECK(a.log.size() == b.log.size());
+  CHECK(a.home_goals == b.home_goals);
+  CHECK(a.away_goals == b.away_goals);
+  CHECK(a.log.size() == b.log.size());
 }
 
-FOOTBSIM_TEST(much_stronger_team_wins_more_often_across_several_seeds)
+TEST_CASE("much stronger team wins more often across several seeds", "[engine][smoke]")
 {
   TeamStats strong = MakeTeam("Strong FC");
   strong.attack = 90;
@@ -92,10 +93,10 @@ FOOTBSIM_TEST(much_stronger_team_wins_more_often_across_several_seeds)
     }
   }
 
-  FOOTBSIM_CHECK(strong_wins >= TRIALS * 0.7); // should dominate, not win every single time
+  CHECK(strong_wins >= TRIALS * 0.7); // should dominate, not win every single time
 }
 
-FOOTBSIM_TEST(more_aggressive_team_takes_more_shots_on_average)
+TEST_CASE("more aggressive team takes more shots on average", "[engine][smoke][aggression]")
 {
   TeamStats attacking = MakeTeam("Attacking FC");
   attacking.aggression = 90;
@@ -116,5 +117,5 @@ FOOTBSIM_TEST(more_aggressive_team_takes_more_shots_on_average)
     defensive_shots += result.away_state.shots;
   }
 
-  FOOTBSIM_CHECK(attacking_shots > defensive_shots);
+  CHECK(attacking_shots > defensive_shots);
 }

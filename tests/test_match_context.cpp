@@ -1,16 +1,17 @@
 #include "footbsim/match_context.hpp"
-#include "micro_test.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 using footbsim::HomeAdvantageLevel;
 using footbsim::RefereeStyle;
 using footbsim::TravelFatigueLevel;
 
-FOOTBSIM_TEST(home_advantage_none_applies_no_boost)
+TEST_CASE("home advantage NONE applies no boost", "[match_context][home_advantage]")
 {
-  FOOTBSIM_CHECK(footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::NONE) == 1.0);
+  CHECK(footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::NONE) == 1.0);
 }
 
-FOOTBSIM_TEST(home_advantage_multiplier_increases_with_level)
+TEST_CASE("home advantage multiplier increases with level", "[match_context][home_advantage]")
 {
   const double none = footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::NONE);
   const double slight = footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::SLIGHT);
@@ -18,35 +19,35 @@ FOOTBSIM_TEST(home_advantage_multiplier_increases_with_level)
   const double strong = footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::STRONG);
   const double maximum = footbsim::HomeAdvantageMultiplier(HomeAdvantageLevel::MAXIMUM);
 
-  FOOTBSIM_CHECK(none < slight);
-  FOOTBSIM_CHECK(slight < moderate);
-  FOOTBSIM_CHECK(moderate < strong);
-  FOOTBSIM_CHECK(strong < maximum);
+  CHECK(none < slight);
+  CHECK(slight < moderate);
+  CHECK(moderate < strong);
+  CHECK(strong < maximum);
 }
 
-FOOTBSIM_TEST(referee_style_balanced_applies_no_adjustment)
+TEST_CASE("referee style BALANCED applies no adjustment", "[match_context][referee]")
 {
-  FOOTBSIM_CHECK(footbsim::RefereeStrictnessMultiplier(RefereeStyle::BALANCED) == 1.0);
+  CHECK(footbsim::RefereeStrictnessMultiplier(RefereeStyle::BALANCED) == 1.0);
 }
 
-FOOTBSIM_TEST(referee_strictness_multiplier_increases_with_style)
+TEST_CASE("referee strictness multiplier increases with style", "[match_context][referee]")
 {
   const double lenient = footbsim::RefereeStrictnessMultiplier(RefereeStyle::LENIENT);
   const double balanced = footbsim::RefereeStrictnessMultiplier(RefereeStyle::BALANCED);
   const double strict = footbsim::RefereeStrictnessMultiplier(RefereeStyle::STRICT);
   const double very_strict = footbsim::RefereeStrictnessMultiplier(RefereeStyle::VERY_STRICT);
 
-  FOOTBSIM_CHECK(lenient < balanced);
-  FOOTBSIM_CHECK(balanced < strict);
-  FOOTBSIM_CHECK(strict < very_strict);
+  CHECK(lenient < balanced);
+  CHECK(balanced < strict);
+  CHECK(strict < very_strict);
 }
 
-FOOTBSIM_TEST(travel_fatigue_same_city_applies_no_penalty)
+TEST_CASE("travel fatigue SAME_CITY applies no penalty", "[match_context][travel_fatigue]")
 {
-  FOOTBSIM_CHECK(footbsim::TravelFatiguePenalty(TravelFatigueLevel::SAME_CITY) == 0.0);
+  CHECK(footbsim::TravelFatiguePenalty(TravelFatigueLevel::SAME_CITY) == 0.0);
 }
 
-FOOTBSIM_TEST(travel_fatigue_penalty_increases_with_distance)
+TEST_CASE("travel fatigue penalty increases with distance", "[match_context][travel_fatigue]")
 {
   // A different state (a neighboring state, same region) is a shorter trip
   // than a different region (which spans multiple states), so the penalty
@@ -56,16 +57,16 @@ FOOTBSIM_TEST(travel_fatigue_penalty_increases_with_distance)
   const double region = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_REGION);
   const double country = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_COUNTRY);
 
-  FOOTBSIM_CHECK(same_city < state);
-  FOOTBSIM_CHECK(state < region);
-  FOOTBSIM_CHECK(region < country);
+  CHECK(same_city < state);
+  CHECK(state < region);
+  CHECK(region < country);
 }
 
-FOOTBSIM_TEST(travel_fatigue_stays_a_small_nudge_even_at_its_largest)
+TEST_CASE("travel fatigue stays a small nudge even at its largest", "[match_context][travel_fatigue]")
 {
   // This is meant as light seasoning on the simulation, not a dominant
   // factor -- guard against it creeping up into something that swings
   // matches on its own.
   const double country = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_COUNTRY);
-  FOOTBSIM_CHECK(country <= 15.0);
+  CHECK(country <= 15.0);
 }
