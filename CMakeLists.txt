@@ -11,3 +11,8 @@ option(FOOTBSIM_BUILD_TESTS "Build FootbSim unit tests" ON)
 
 add_subdirectory(src)
 add_subdirectory(apps/cli)
+
+if(FOOTBSIM_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
