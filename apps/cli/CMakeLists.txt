@@ -1,0 +1,3 @@
+add_executable(footbsim_cli main.cpp)
+target_link_libraries(footbsim_cli PRIVATE footbsim_core)
+footbsim_set_warnings(footbsim_cli)
