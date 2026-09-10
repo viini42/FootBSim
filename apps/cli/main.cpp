@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   const footbsim::TeamStats away = SampleAway();
 
   footbsim::MatchContext context;
-  context.home_advantage = 1.12;
+  context.home_advantage = footbsim::HomeAdvantageLevel::STRONG;
   context.weather = footbsim::Weather::CLEAR;
   context.referee_strictness = 1.0;
   context.stakes = footbsim::Stakes::NORMAL;

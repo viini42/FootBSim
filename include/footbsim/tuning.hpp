@@ -96,11 +96,19 @@ namespace footbsim::tuning
   constexpr double AGGRESSION_PRESSURE_SCALE =
     250.0; // 0.8 (fully defensive) .. 1.2 (all-out attack)
 
+  // ---- Home advantage levels -----------------------------------------
+  // Discrete crowd/venue advantage for the home side, from a neutral venue
+  // (NONE) to a true fortress (MAXIMUM). MODERATE is the default and is
+  // what the realism tuning pass above was calibrated against.
+  constexpr double HOME_ADVANTAGE_NONE = 1.00; // neutral venue, e.g. a cup final on neutral ground
+  constexpr double HOME_ADVANTAGE_SLIGHT = 1.03;   // mild edge
+  constexpr double HOME_ADVANTAGE_MODERATE = 1.07; // typical top-flight home crowd (default)
+  constexpr double HOME_ADVANTAGE_STRONG = 1.11;   // loud, hostile away experience
+  constexpr double HOME_ADVANTAGE_MAXIMUM = 1.15;  // true fortress venue
+
   // ---- External influences (MatchContext defaults) -----------------------
   // Neutral/realistic defaults for match-level context; callers override
   // per match as needed.
-  constexpr double DEFAULT_HOME_ADVANTAGE =
-    1.07; // multiplier on home team's effective attack/midfield
   constexpr double RAIN_ACCURACY_PENALTY =
     0.15; // max attack-accuracy penalty at full rain severity
   constexpr double WIND_ACCURACY_PENALTY =

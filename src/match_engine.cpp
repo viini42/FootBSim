@@ -90,7 +90,7 @@ namespace footbsim
 
   bool MatchEngine::DecideFirstPossession()
   {
-    const double home_mid = m_home.midfield * m_context.home_advantage;
+    const double home_mid = m_home.midfield * HomeAdvantageMultiplier(m_context.home_advantage);
     const double away_mid = m_away.midfield;
     return m_rng.Bernoulli(DuelProbability(home_mid, away_mid, tuning::KICKOFF_DUEL_STEEPNESS));
   }
@@ -108,7 +108,7 @@ namespace footbsim
     const double stam_def =
       StaminaDecayFactor(defending.stamina - travel_penalty_defending, minute);
 
-    const double home_boost = homeHasBall ? m_context.home_advantage : 1.0;
+    const double home_boost = homeHasBall ? HomeAdvantageMultiplier(m_context.home_advantage) : 1.0;
     const double weather_factor =
       WeatherAccuracyFactor(m_context.weather, m_context.weather_severity);
     const double variance = StakesVarianceFactor(m_context.stakes);

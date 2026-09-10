@@ -2,6 +2,7 @@ add_executable(footbsim_tests
     test_main.cpp
     test_effective_stats.cpp
     test_event_probabilities.cpp
+    test_match_context.cpp
     test_match_engine_smoke.cpp
 )
 
