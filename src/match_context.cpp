@@ -1,5 +1,7 @@
 #include "footbsim/match_context.hpp"
 
+#include "footbsim/tuning.hpp"
+
 #include <algorithm>
 
 namespace footbsim
@@ -13,11 +15,11 @@ namespace footbsim
     case Weather::CLEAR:
       return 1.0;
     case Weather::RAIN:
-      return 1.0 - 0.15 * s;
+      return 1.0 - tuning::RAIN_ACCURACY_PENALTY * s;
     case Weather::WIND:
-      return 1.0 - 0.10 * s;
+      return 1.0 - tuning::WIND_ACCURACY_PENALTY * s;
     case Weather::SNOW:
-      return 1.0 - 0.20 * s;
+      return 1.0 - tuning::SNOW_ACCURACY_PENALTY * s;
     }
     return 1.0;
   }
@@ -29,9 +31,9 @@ namespace footbsim
     case Stakes::NORMAL:
       return 1.0;
     case Stakes::RIVALRY:
-      return 1.3;
+      return tuning::RIVALRY_VARIANCE;
     case Stakes::FINAL:
-      return 1.6;
+      return tuning::FINAL_VARIANCE;
     }
     return 1.0;
   }

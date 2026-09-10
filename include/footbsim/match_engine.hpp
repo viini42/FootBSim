@@ -5,6 +5,7 @@
 #include "footbsim/pitch_zone.hpp"
 #include "footbsim/rng.hpp"
 #include "footbsim/team_stats.hpp"
+#include "footbsim/tuning.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -52,8 +53,9 @@ namespace footbsim
 
   // Probability that "attacker" wins a duel against "defender" -- used for
   // zone advancement, shot outcomes, and first-possession rolls alike.
-  double
-  DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness = 0.045);
+  double DuelProbability(double effectiveAttacker,
+                         double effectiveDefender,
+                         double steepness = tuning::ZONE_DUEL_STEEPNESS);
 
   // ---- Engine ---------------------------------------------------------------
 

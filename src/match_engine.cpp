@@ -1,44 +1,12 @@
 #include "footbsim/match_engine.hpp"
 
+#include "footbsim/tuning.hpp"
+
 #include <algorithm>
 #include <cmath>
 
 namespace footbsim
 {
-
-  namespace
-  {
-
-    // Tuned by repeated-seed simulation against real-world per-team-per-match
-    // averages (~11 shots, ~35% on target, ~4 corners, ~11 fouls, ~1.7 yellow
-    // cards, ~2.6 combined goals). See tests/test_match_engine_smoke.cpp for
-    // the aggregate sanity checks that guard these.
-
-    constexpr double KICKOFF_DUEL_STEEPNESS = 0.055;
-    constexpr double ZONE_ADVANCE_FRACTION =
-      0.95; // fraction of a won midfield duel that pushes forward
-
-    constexpr double SHOT_EAGERNESS = 0.97; // fraction of a won attacking duel that becomes a shot
-    constexpr double GOAL_DUEL_STEEPNESS = 0.045;
-    constexpr double GOAL_CONVERSION_SCALE =
-      0.26;                             // scales duel probability down to a goals/shots rate
-    constexpr double SAVE_BAND = 0.25;  // shot-outcome mass: saved (on target, not a goal)
-    constexpr double BLOCK_BAND = 0.15; // shot-outcome mass: blocked (off target)
-    constexpr double SAVE_CORNER_CHANCE = 0.9;
-    constexpr double BLOCK_CORNER_CHANCE = 0.95;
-    constexpr double PROBE_CORNER_CHANCE = 0.7; // a non-shot attacking probe can still win a corner
-
-    constexpr double FOUL_BASE_RATE = 0.26;
-    constexpr double FOUL_DISCIPLINE_BASE = 0.3;
-    constexpr double FOUL_DISCIPLINE_SCALE = 1.4;
-    constexpr double CARD_BASE_RATE = 0.20;
-    constexpr double CARD_DISCIPLINE_BASE = 0.5;
-    constexpr double SECOND_YELLOW_CHANCE = 0.08;
-    constexpr double STRAIGHT_RED_CHANCE = 0.015;
-
-    constexpr double RED_CARD_PENALTY = 0.85;
-
-  } // namespace
 
   // ---- Pure statistical primitives -----------------------------------------
 
@@ -49,7 +17,7 @@ namespace footbsim
                          double aggressionFactor,
                          double moraleNoise)
   {
-    const double form_factor = 1.0 + stats.form / 100.0;
+    const double form_factor = 1.0 + stats.form / tuning::ATTACK_FORM_SCALE;
     const double base =
       stats.attack * form_factor * staminaFactor * homeFactor * weatherFactor * aggressionFactor;
     return std::max(1.0, base + moraleNoise);
@@ -61,7 +29,7 @@ namespace footbsim
                           double aggressionFactor,
                           double moraleNoise)
   {
-    const double form_factor = 1.0 + stats.form / 200.0;
+    const double form_factor = 1.0 + stats.form / tuning::DEFENSE_FORM_SCALE;
     const double base = stats.defense * form_factor * staminaFactor * homeFactor * aggressionFactor;
     return std::max(1.0, base + moraleNoise);
   }
@@ -70,26 +38,34 @@ namespace footbsim
   {
     const double minute_frac = std::clamp(static_cast<double>(minute) / 90.0, 0.0, 1.0);
     const double fatigue_susceptibility = std::clamp((100.0 - baseStamina) / 100.0, 0.0, 1.0);
-    const double decay = minute_frac * minute_frac * (0.05 + 0.20 * fatigue_susceptibility);
-    return std::clamp(1.0 - decay, 0.5, 1.0);
+    const double decay =
+      minute_frac * minute_frac *
+      (tuning::STAMINA_DECAY_BASE + tuning::STAMINA_DECAY_FATIGUE_SCALE * fatigue_susceptibility);
+    return std::clamp(1.0 - decay, tuning::STAMINA_DECAY_FLOOR, 1.0);
   }
 
   double AggressionAttackFactor(double aggression)
   {
     const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 + (a - 50.0) / 200.0; // 0.75 (fully defensive) .. 1.25 (all-out attack)
+    return 1.0 +
+           (a - 50.0) /
+             tuning::AGGRESSION_ATTACK_SCALE; // 0.75 (fully defensive) .. 1.25 (all-out attack)
   }
 
   double AggressionDefenseFactor(double aggression)
   {
     const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 - (a - 50.0) / 250.0; // 1.2 (fully defensive) .. 0.8 (all-out attack)
+    return 1.0 -
+           (a - 50.0) /
+             tuning::AGGRESSION_DEFENSE_SCALE; // 1.2 (fully defensive) .. 0.8 (all-out attack)
   }
 
   double AggressionPressureFactor(double aggression)
   {
     const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 + (a - 50.0) / 250.0; // 0.8 (fully defensive) .. 1.2 (all-out attack)
+    return 1.0 +
+           (a - 50.0) /
+             tuning::AGGRESSION_PRESSURE_SCALE; // 0.8 (fully defensive) .. 1.2 (all-out attack)
   }
 
   double Sigmoid(double x)
@@ -116,7 +92,7 @@ namespace footbsim
   {
     const double home_mid = m_home.midfield * m_context.home_advantage;
     const double away_mid = m_away.midfield;
-    return m_rng.Bernoulli(DuelProbability(home_mid, away_mid, KICKOFF_DUEL_STEEPNESS));
+    return m_rng.Bernoulli(DuelProbability(home_mid, away_mid, tuning::KICKOFF_DUEL_STEEPNESS));
   }
 
   MatchEngine::MinuteEffectiveStats MatchEngine::ComputeMinuteStats(bool homeHasBall, int minute)
@@ -163,9 +139,10 @@ namespace footbsim
     TeamMatchState& def_state = homeIsDefending ? result.home_state : result.away_state;
 
     const double discipline_factor = std::clamp((100.0 - defending.discipline) / 100.0, 0.0, 1.0);
-    const double p_foul = FOUL_BASE_RATE *
-                          (FOUL_DISCIPLINE_BASE + FOUL_DISCIPLINE_SCALE * discipline_factor) *
-                          AggressionPressureFactor(defending.aggression);
+    const double p_foul =
+      tuning::FOUL_BASE_RATE *
+      (tuning::FOUL_DISCIPLINE_BASE + tuning::FOUL_DISCIPLINE_SCALE * discipline_factor) *
+      AggressionPressureFactor(defending.aggression);
 
     if (!m_rng.Bernoulli(p_foul))
     {
@@ -179,8 +156,8 @@ namespace footbsim
                            PitchZone::MIDFIELD,
                            defending.name + " concede a foul" });
 
-    const double p_card = std::clamp(CARD_BASE_RATE * m_context.referee_strictness *
-                                       (CARD_DISCIPLINE_BASE + discipline_factor),
+    const double p_card = std::clamp(tuning::CARD_BASE_RATE * m_context.referee_strictness *
+                                       (tuning::CARD_DISCIPLINE_BASE + discipline_factor),
                                      0.0,
                                      1.0);
     if (!m_rng.Bernoulli(p_card))
@@ -188,8 +165,9 @@ namespace footbsim
       return;
     }
 
-    const bool second_yellow = def_state.yellow_cards >= 1 && m_rng.Bernoulli(SECOND_YELLOW_CHANCE);
-    const bool straight_red = !second_yellow && m_rng.Bernoulli(STRAIGHT_RED_CHANCE);
+    const bool second_yellow =
+      def_state.yellow_cards >= 1 && m_rng.Bernoulli(tuning::SECOND_YELLOW_CHANCE);
+    const bool straight_red = !second_yellow && m_rng.Bernoulli(tuning::STRAIGHT_RED_CHANCE);
 
     if (second_yellow || straight_red)
     {
@@ -223,7 +201,7 @@ namespace footbsim
     const double p_advance = DuelProbability(eff.possessing_midfield, eff.defending_midfield);
     const double roll = m_rng.Uniform01();
 
-    if (roll < p_advance * ZONE_ADVANCE_FRACTION)
+    if (roll < p_advance * tuning::ZONE_ADVANCE_FRACTION)
     {
       zone = PitchZone::ATTACKING;
       result.log.push_back({ minute,
@@ -279,10 +257,10 @@ namespace footbsim
     }
 
     const double shot_threshold =
-      p_pressure * SHOT_EAGERNESS * AggressionPressureFactor(possessing.aggression);
+      p_pressure * tuning::SHOT_EAGERNESS * AggressionPressureFactor(possessing.aggression);
     if (roll >= shot_threshold)
     {
-      if (m_rng.Bernoulli(PROBE_CORNER_CHANCE))
+      if (m_rng.Bernoulli(tuning::PROBE_CORNER_CHANCE))
       {
         poss_state.corners++;
         result.log.push_back(
@@ -303,8 +281,8 @@ namespace footbsim
       { minute, EventType::SHOT, possessing.name, zone, possessing.name + " take a shot" });
 
     const double p_goal =
-      DuelProbability(eff.possessing_attack, eff.defending_defense, GOAL_DUEL_STEEPNESS) *
-      GOAL_CONVERSION_SCALE;
+      DuelProbability(eff.possessing_attack, eff.defending_defense, tuning::GOAL_DUEL_STEEPNESS) *
+      tuning::GOAL_CONVERSION_SCALE;
     const double shot_roll = m_rng.Uniform01();
 
     if (shot_roll < p_goal)
@@ -318,10 +296,10 @@ namespace footbsim
       return;
     }
 
-    if (shot_roll < p_goal + SAVE_BAND)
+    if (shot_roll < p_goal + tuning::SAVE_BAND)
     {
       poss_state.shots_on_target++;
-      if (m_rng.Bernoulli(SAVE_CORNER_CHANCE))
+      if (m_rng.Bernoulli(tuning::SAVE_CORNER_CHANCE))
       {
         poss_state.corners++;
         result.log.push_back(
@@ -336,11 +314,11 @@ namespace footbsim
       return;
     }
 
-    if (shot_roll < p_goal + SAVE_BAND + BLOCK_BAND)
+    if (shot_roll < p_goal + tuning::SAVE_BAND + tuning::BLOCK_BAND)
     {
       result.log.push_back(
         { minute, EventType::BLOCK, defending.name, zone, defending.name + " block the shot" });
-      if (m_rng.Bernoulli(BLOCK_CORNER_CHANCE))
+      if (m_rng.Bernoulli(tuning::BLOCK_CORNER_CHANCE))
       {
         poss_state.corners++;
         result.log.push_back(
@@ -386,13 +364,13 @@ namespace footbsim
       const bool def_has_red = (home_has_ball ? result.away_state : result.home_state).has_red_card;
       if (poss_has_red)
       {
-        eff.possessing_attack *= RED_CARD_PENALTY;
-        eff.possessing_midfield *= RED_CARD_PENALTY;
+        eff.possessing_attack *= tuning::RED_CARD_PENALTY;
+        eff.possessing_midfield *= tuning::RED_CARD_PENALTY;
       }
       if (def_has_red)
       {
-        eff.defending_defense *= RED_CARD_PENALTY;
-        eff.defending_midfield *= RED_CARD_PENALTY;
+        eff.defending_defense *= tuning::RED_CARD_PENALTY;
+        eff.defending_midfield *= tuning::RED_CARD_PENALTY;
       }
 
       if (zone == PitchZone::MIDFIELD)
