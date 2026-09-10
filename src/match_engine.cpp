@@ -331,7 +331,7 @@ namespace footbsim
       TeamMatchState& poss_state = home_has_ball ? result.home_state : result.away_state;
       poss_state.possession_ticks++;
 
-      MaybeGenerateFoul(home_has_ball, minute, result);
+      MaybeGenerateFoul(!home_has_ball, minute, result);
 
       MinuteEffectiveStats eff = ComputeMinuteStats(home_has_ball, minute);
 
