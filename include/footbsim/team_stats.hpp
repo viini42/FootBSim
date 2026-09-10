@@ -19,6 +19,7 @@ namespace footbsim
     double stamina = 100.0;   // 0-100: squad condition at kickoff
     double discipline = 50.0; // 0-100 (higher = cleaner): foul/card tendency
     double morale = 50.0;     // 0-100: higher = more consistent performance
+    double aggression = 50.0; // 0-100: tactical intent, 100 = all-out attack, 0 = fully defensive
   };
 
 } // namespace footbsim

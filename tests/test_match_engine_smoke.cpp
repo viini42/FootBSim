@@ -94,3 +94,27 @@ FOOTBSIM_TEST(much_stronger_team_wins_more_often_across_several_seeds)
 
   FOOTBSIM_CHECK(strong_wins >= TRIALS * 0.7); // should dominate, not win every single time
 }
+
+FOOTBSIM_TEST(more_aggressive_team_takes_more_shots_on_average)
+{
+  TeamStats attacking = MakeTeam("Attacking FC");
+  attacking.aggression = 90;
+
+  TeamStats defensive = MakeTeam("Defensive FC");
+  defensive.aggression = 10;
+
+  MatchContext context;
+
+  int attacking_shots = 0;
+  int defensive_shots = 0;
+  constexpr int TRIALS = 25;
+  for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
+  {
+    MatchEngine engine(attacking, defensive, context, seed);
+    const MatchResult result = engine.Simulate();
+    attacking_shots += result.home_state.shots;
+    defensive_shots += result.away_state.shots;
+  }
+
+  FOOTBSIM_CHECK(attacking_shots > defensive_shots);
+}

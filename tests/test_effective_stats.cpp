@@ -17,8 +17,9 @@ FOOTBSIM_TEST(higher_attack_stat_yields_higher_effective_attack)
                                                     /*staminaFactor=*/1.0,
                                                     /*homeFactor=*/1.0,
                                                     /*weatherFactor=*/1.0,
+                                                    /*aggressionFactor=*/1.0,
                                                     /*moraleNoise=*/0.0);
-  const double eff_strong = footbsim::EffectiveAttack(strong, 1.0, 1.0, 1.0, 0.0);
+  const double eff_strong = footbsim::EffectiveAttack(strong, 1.0, 1.0, 1.0, 1.0, 0.0);
 
   FOOTBSIM_CHECK(eff_strong > eff_weak);
 }
@@ -34,8 +35,8 @@ FOOTBSIM_TEST(stamina_decay_reduces_effective_stats_over_the_match)
 
   FOOTBSIM_CHECK(late <= early);
 
-  const double eff_early = footbsim::EffectiveAttack(stats, early, 1.0, 1.0, 0.0);
-  const double eff_late = footbsim::EffectiveAttack(stats, late, 1.0, 1.0, 0.0);
+  const double eff_early = footbsim::EffectiveAttack(stats, early, 1.0, 1.0, 1.0, 0.0);
+  const double eff_late = footbsim::EffectiveAttack(stats, late, 1.0, 1.0, 1.0, 0.0);
   FOOTBSIM_CHECK(eff_late <= eff_early);
 }
 
@@ -53,8 +54,8 @@ FOOTBSIM_TEST(home_advantage_multiplier_increases_effective_attack)
   stats.attack = 60;
   stats.form = 0;
 
-  const double neutral = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.0, 1.0, 0.0);
-  const double boosted = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.15, 1.0, 0.0);
+  const double neutral = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.0, 1.0, 1.0, 0.0);
+  const double boosted = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.15, 1.0, 1.0, 0.0);
 
   FOOTBSIM_CHECK(boosted > neutral);
 }
@@ -65,9 +66,40 @@ FOOTBSIM_TEST(weather_penalty_reduces_effective_attack_but_not_below_floor)
   stats.attack = 50;
   stats.form = 0;
 
-  const double clear = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/1.0, 0.0);
-  const double stormy = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/0.8, 0.0);
+  const double clear = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/1.0, 1.0, 0.0);
+  const double stormy = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/0.8, 1.0, 0.0);
 
   FOOTBSIM_CHECK(stormy < clear);
   FOOTBSIM_CHECK(stormy >= 1.0); // floor enforced by std::max in EffectiveAttack
+}
+
+FOOTBSIM_TEST(aggression_trades_off_attack_against_defense)
+{
+  // Neutral aggression (50) leaves both factors unchanged.
+  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(50.0) == 1.0);
+  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(50.0) == 1.0);
+
+  // Attacking tactics (aggression -> 100) boost attack but weaken defense.
+  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(100.0) > 1.0);
+  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(100.0) < 1.0);
+
+  // Defensive tactics (aggression -> 0) do the reverse.
+  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(0.0) < 1.0);
+  FOOTBSIM_CHECK(footbsim::AggressionDefenseFactor(0.0) > 1.0);
+}
+
+FOOTBSIM_TEST(aggression_factors_stay_bounded_for_out_of_range_input)
+{
+  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(-50.0) == footbsim::AggressionAttackFactor(0.0));
+  FOOTBSIM_CHECK(footbsim::AggressionAttackFactor(200.0) ==
+                 footbsim::AggressionAttackFactor(100.0));
+}
+
+FOOTBSIM_TEST(aggression_pressure_factor_increases_with_aggression)
+{
+  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(50.0) == 1.0);
+  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(100.0) >
+                 footbsim::AggressionPressureFactor(50.0));
+  FOOTBSIM_CHECK(footbsim::AggressionPressureFactor(0.0) <
+                 footbsim::AggressionPressureFactor(50.0));
 }

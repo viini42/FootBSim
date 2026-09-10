@@ -12,20 +12,23 @@ namespace footbsim
                          double staminaFactor,
                          double homeFactor,
                          double weatherFactor,
+                         double aggressionFactor,
                          double moraleNoise)
   {
     const double form_factor = 1.0 + stats.form / 100.0;
-    const double base = stats.attack * form_factor * staminaFactor * homeFactor * weatherFactor;
+    const double base =
+      stats.attack * form_factor * staminaFactor * homeFactor * weatherFactor * aggressionFactor;
     return std::max(1.0, base + moraleNoise);
   }
 
   double EffectiveDefense(const TeamStats& stats,
                           double staminaFactor,
                           double homeFactor,
+                          double aggressionFactor,
                           double moraleNoise)
   {
     const double form_factor = 1.0 + stats.form / 200.0;
-    const double base = stats.defense * form_factor * staminaFactor * homeFactor;
+    const double base = stats.defense * form_factor * staminaFactor * homeFactor * aggressionFactor;
     return std::max(1.0, base + moraleNoise);
   }
 
@@ -35,6 +38,24 @@ namespace footbsim
     const double fatigue_susceptibility = std::clamp((100.0 - baseStamina) / 100.0, 0.0, 1.0);
     const double decay = minute_frac * minute_frac * (0.05 + 0.20 * fatigue_susceptibility);
     return std::clamp(1.0 - decay, 0.5, 1.0);
+  }
+
+  double AggressionAttackFactor(double aggression)
+  {
+    const double a = std::clamp(aggression, 0.0, 100.0);
+    return 1.0 + (a - 50.0) / 200.0; // 0.75 (fully defensive) .. 1.25 (all-out attack)
+  }
+
+  double AggressionDefenseFactor(double aggression)
+  {
+    const double a = std::clamp(aggression, 0.0, 100.0);
+    return 1.0 - (a - 50.0) / 250.0; // 1.2 (fully defensive) .. 0.8 (all-out attack)
+  }
+
+  double AggressionPressureFactor(double aggression)
+  {
+    const double a = std::clamp(aggression, 0.0, 100.0);
+    return 1.0 + (a - 50.0) / 250.0; // 0.8 (fully defensive) .. 1.2 (all-out attack)
   }
 
   double Sigmoid(double x)
@@ -85,11 +106,19 @@ namespace footbsim
     const double poss_noise = m_rng.Normal(0.0, variance * (100.0 - possessing.morale) / 20.0);
     const double def_noise = m_rng.Normal(0.0, variance * (100.0 - defending.morale) / 20.0);
 
+    const double poss_aggression_attack = AggressionAttackFactor(possessing.aggression);
+    const double def_aggression_defense = AggressionDefenseFactor(defending.aggression);
+
     MinuteEffectiveStats eff;
-    eff.possessing_attack =
-      EffectiveAttack(possessing, stam_poss, home_boost, weather_factor, poss_noise);
+    eff.possessing_attack = EffectiveAttack(possessing,
+                                            stam_poss,
+                                            home_boost,
+                                            weather_factor,
+                                            poss_aggression_attack,
+                                            poss_noise);
     eff.possessing_midfield = possessing.midfield * stam_poss * home_boost;
-    eff.defending_defense = EffectiveDefense(defending, stam_def, 1.0, def_noise);
+    eff.defending_defense =
+      EffectiveDefense(defending, stam_def, 1.0, def_aggression_defense, def_noise);
     eff.defending_midfield = defending.midfield * stam_def;
     return eff;
   }
@@ -100,7 +129,8 @@ namespace footbsim
     TeamMatchState& def_state = homeIsDefending ? result.home_state : result.away_state;
 
     const double discipline_factor = std::clamp((100.0 - defending.discipline) / 100.0, 0.0, 1.0);
-    const double p_foul = 0.02 * (0.3 + 1.4 * discipline_factor);
+    const double p_foul =
+      0.02 * (0.3 + 1.4 * discipline_factor) * AggressionPressureFactor(defending.aggression);
 
     if (!m_rng.Bernoulli(p_foul))
     {
@@ -211,7 +241,9 @@ namespace footbsim
       return;
     }
 
-    if (roll >= p_pressure * 0.35)
+    const double shot_threshold =
+      p_pressure * 0.35 * AggressionPressureFactor(possessing.aggression);
+    if (roll >= shot_threshold)
     {
       result.log.push_back({ minute,
                              EventType::PASS,

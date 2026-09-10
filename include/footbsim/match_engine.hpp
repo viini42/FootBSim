@@ -16,12 +16,13 @@ namespace footbsim
   // Kept free of engine/RNG state so they're trivially unit-testable.
 
   // Effective attack for one minute of play: base stat scaled by recent form,
-  // stamina, home advantage (1.0 if not applicable) and weather accuracy, plus
-  // a morale-driven noise term (can be negative).
+  // stamina, home advantage (1.0 if not applicable), weather accuracy and
+  // tactical aggression, plus a morale-driven noise term (can be negative).
   double EffectiveAttack(const TeamStats& stats,
                          double staminaFactor,
                          double homeFactor,
                          double weatherFactor,
+                         double aggressionFactor,
                          double moraleNoise);
 
   // Effective defense for one minute of play. No weather penalty (accuracy
@@ -30,11 +31,22 @@ namespace footbsim
   double EffectiveDefense(const TeamStats& stats,
                           double staminaFactor,
                           double homeFactor,
+                          double aggressionFactor,
                           double moraleNoise);
 
   // Multiplier in (0, 1] representing fatigue at the given minute (1-90+).
   // Teams with lower base stamina decay faster and further.
   double StaminaDecayFactor(double baseStamina, int minute);
+
+  // Tactical aggression trade-off: a more attacking team (aggression -> 100)
+  // hits harder going forward but leaves more gaps at the back; a more
+  // defensive team (aggression -> 0) does the reverse. Neutral at 50.
+  double AggressionAttackFactor(double aggression);
+  double AggressionDefenseFactor(double aggression);
+
+  // How eagerly a team commits to the ball: raises a possessing team's shot
+  // eagerness and a defending team's foul rate when they play aggressively.
+  double AggressionPressureFactor(double aggression);
 
   double Sigmoid(double x);
 

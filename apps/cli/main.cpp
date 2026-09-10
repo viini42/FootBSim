@@ -21,6 +21,7 @@ namespace
     s.stamina = 88;
     s.discipline = 60;
     s.morale = 75;
+    s.aggression = 68;
     return s;
   }
 
@@ -35,6 +36,7 @@ namespace
     s.stamina = 80;
     s.discipline = 45;
     s.morale = 55;
+    s.aggression = 32;
     return s;
   }
 
