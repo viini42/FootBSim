@@ -39,6 +39,10 @@ From .clang-format file in root project
 
 <prefix>: short imperative summary
 
+Any additional note should be written here
+In multiline style
+Can use markdown syntax
+
 ### Guidelines:
 
     Keep the summary short and specific. Prefer the changed behavior over generic wording.
