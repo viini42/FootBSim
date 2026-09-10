@@ -1,6 +1,7 @@
 add_library(footbsim_core STATIC
     match_context.cpp
     events.cpp
+    rng.cpp
 )
 
 target_include_directories(footbsim_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
