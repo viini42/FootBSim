@@ -8,3 +8,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/CompilerWarnings.cmake)
 
 option(FOOTBSIM_BUILD_TESTS "Build FootbSim unit tests" ON)
+
+add_subdirectory(src)
