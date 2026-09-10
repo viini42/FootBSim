@@ -156,7 +156,8 @@ namespace footbsim
                            PitchZone::MIDFIELD,
                            defending.name + " concede a foul" });
 
-    const double p_card = std::clamp(tuning::CARD_BASE_RATE * m_context.referee_strictness *
+    const double p_card = std::clamp(tuning::CARD_BASE_RATE *
+                                       RefereeStrictnessMultiplier(m_context.referee_strictness) *
                                        (tuning::CARD_DISCIPLINE_BASE + discipline_factor),
                                      0.0,
                                      1.0);

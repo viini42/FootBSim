@@ -62,7 +62,7 @@ int main(int argc, char** argv)
   footbsim::MatchContext context;
   context.home_advantage = footbsim::HomeAdvantageLevel::STRONG;
   context.weather = footbsim::Weather::CLEAR;
-  context.referee_strictness = 1.0;
+  context.referee_strictness = footbsim::RefereeStyle::STRICT;
   context.stakes = footbsim::Stakes::NORMAL;
   context.travel_fatigue = 5.0;
 

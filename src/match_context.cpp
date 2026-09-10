@@ -25,6 +25,22 @@ namespace footbsim
     return tuning::HOME_ADVANTAGE_MODERATE;
   }
 
+  double RefereeStrictnessMultiplier(RefereeStyle style)
+  {
+    switch (style)
+    {
+    case RefereeStyle::LENIENT:
+      return tuning::REFEREE_STYLE_LENIENT;
+    case RefereeStyle::BALANCED:
+      return tuning::REFEREE_STYLE_BALANCED;
+    case RefereeStyle::STRICT:
+      return tuning::REFEREE_STYLE_STRICT;
+    case RefereeStyle::VERY_STRICT:
+      return tuning::REFEREE_STYLE_VERY_STRICT;
+    }
+    return tuning::REFEREE_STYLE_BALANCED;
+  }
+
   double WeatherAccuracyFactor(Weather weather, double severity)
   {
     const double s = std::clamp(severity, 0.0, 1.0);

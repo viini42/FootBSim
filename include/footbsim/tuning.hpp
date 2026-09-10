@@ -106,6 +106,16 @@ namespace footbsim::tuning
   constexpr double HOME_ADVANTAGE_STRONG = 1.11;   // loud, hostile away experience
   constexpr double HOME_ADVANTAGE_MAXIMUM = 1.15;  // true fortress venue
 
+  // ---- Referee style ---------------------------------------------------
+  // Discrete card-issuing characteristic for the match official. BALANCED
+  // is the default and matches the referee_strictness == 1.0 multiplier
+  // the realism tuning pass above was calibrated against.
+  constexpr double REFEREE_STYLE_LENIENT = 0.70;  // plays advantage, reluctant to book
+  constexpr double REFEREE_STYLE_BALANCED = 1.00; // standard, by-the-book (default)
+  constexpr double REFEREE_STYLE_STRICT = 1.35;   // low tolerance, quick whistle
+  constexpr double REFEREE_STYLE_VERY_STRICT =
+    1.70; // card-happy, stops play for the smallest contact
+
   // ---- External influences (MatchContext defaults) -----------------------
   // Neutral/realistic defaults for match-level context; callers override
   // per match as needed.
