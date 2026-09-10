@@ -21,7 +21,7 @@ namespace footbsim
   // TeamStats since these describe the match, not the team.
   struct MatchContext
   {
-    double home_advantage = 1.12; // multiplier on home team's effective attack/midfield
+    double home_advantage = 1.07; // multiplier on home team's effective attack/midfield
     Weather weather = Weather::CLEAR;
     double weather_severity = 0.0;   // 0..1, scales weather's accuracy penalty
     double referee_strictness = 1.0; // multiplier on foul -> card probability

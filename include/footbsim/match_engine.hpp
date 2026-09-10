@@ -53,7 +53,7 @@ namespace footbsim
   // Probability that "attacker" wins a duel against "defender" -- used for
   // zone advancement, shot outcomes, and first-possession rolls alike.
   double
-  DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness = 0.06);
+  DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness = 0.045);
 
   // ---- Engine ---------------------------------------------------------------
 
