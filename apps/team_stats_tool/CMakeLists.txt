@@ -1,0 +1,3 @@
+add_executable(footbsim_team_stats_tool main.cpp)
+target_link_libraries(footbsim_team_stats_tool PRIVATE footbsim_core)
+footbsim_set_warnings(footbsim_team_stats_tool)
