@@ -62,7 +62,8 @@ TEST_CASE("travel fatigue penalty increases with distance", "[match_context][tra
   CHECK(region < country);
 }
 
-TEST_CASE("travel fatigue stays a small nudge even at its largest", "[match_context][travel_fatigue]")
+TEST_CASE("travel fatigue stays a small nudge even at its largest",
+          "[match_context][travel_fatigue]")
 {
   // This is meant as light seasoning on the simulation, not a dominant
   // factor -- guard against it creeping up into something that swings

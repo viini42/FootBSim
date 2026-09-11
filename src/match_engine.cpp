@@ -74,12 +74,13 @@ namespace footbsim
     return 1.0 / (1.0 + std::exp(-x));
   }
 
-  double DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness)
+  double
+  DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness, double bias)
   {
     const double gap = effectiveAttacker - effectiveDefender;
     const double compressed_gap =
       std::copysign(std::pow(std::abs(gap), tuning::DUEL_GAP_COMPRESSION_EXPONENT), gap);
-    return Sigmoid(steepness * compressed_gap);
+    return Sigmoid(steepness * compressed_gap + bias);
   }
 
   // ---- Engine ---------------------------------------------------------------
@@ -202,7 +203,10 @@ namespace footbsim
                                         MatchResult& result)
   {
     const TeamStats& possessing = homeHasBall ? m_home : m_away;
-    const double p_advance = DuelProbability(eff.possessing_midfield, eff.defending_midfield);
+    const double p_advance = DuelProbability(eff.possessing_midfield,
+                                             eff.defending_midfield,
+                                             tuning::ZONE_DUEL_STEEPNESS,
+                                             tuning::POSSESSION_RETENTION_BIAS);
     const double roll = m_rng.Uniform01();
 
     if (roll < p_advance * tuning::ZONE_ADVANCE_FRACTION)
@@ -245,7 +249,10 @@ namespace footbsim
     const TeamStats& defending = homeHasBall ? m_away : m_home;
     TeamMatchState& poss_state = homeHasBall ? result.home_state : result.away_state;
 
-    const double p_pressure = DuelProbability(eff.possessing_attack, eff.defending_defense);
+    const double p_pressure = DuelProbability(eff.possessing_attack,
+                                              eff.defending_defense,
+                                              tuning::ZONE_DUEL_STEEPNESS,
+                                              tuning::POSSESSION_RETENTION_BIAS);
     const double roll = m_rng.Uniform01();
 
     if (roll >= p_pressure)

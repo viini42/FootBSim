@@ -40,13 +40,21 @@ namespace footbsim::tuning
     0.058; // midfield advance & attacking-zone pressure (DuelProbability's default)
   constexpr double GOAL_DUEL_STEEPNESS = 0.058; // shot -> goal conversion
 
+  // Baseline bias (added inside the sigmoid, before the steepness/gap term)
+  // toward the possessing side for the two zone-flow duels only -- real
+  // passing success is well above a coin flip, so two evenly-matched sides
+  // shouldn't turn the ball over ~50% of the time by default. Not applied
+  // to the kickoff or goal-conversion duels, which should stay a true
+  // coin flip / pure stat contest between equal sides.
+  constexpr double POSSESSION_RETENTION_BIAS = 0.6; // ~65% retention baseline for equal sides
+
   // ---- Possession flow ---------------------------------------------------
   // How readily a team in a phase of play pushes forward rather than just
   // recycling possession.
   constexpr double ZONE_ADVANCE_FRACTION =
-    0.95; // fraction of a won midfield duel that pushes into the attacking third
+    0.98; // fraction of a won midfield duel that pushes into the attacking third
   constexpr double SHOT_EAGERNESS =
-    0.97; // fraction of a won attacking duel that becomes a shot attempt
+    0.99; // fraction of a won attacking duel that becomes a shot attempt
 
   // ---- Shot outcomes ------------------------------------------------------
   // A shot resolves into goal / save / block / miss. SAVE_BAND + BLOCK_BAND
@@ -54,31 +62,31 @@ namespace footbsim::tuning
   // probability mass is left over is a miss. Saved/blocked shots each have
   // their own independent chance of producing a corner instead.
   constexpr double GOAL_CONVERSION_SCALE =
-    0.26;                             // scales duel probability down to a goals/shots rate
+    0.21;                             // scales duel probability down to a goals/shots rate
   constexpr double SAVE_BAND = 0.25;  // shot-outcome mass: saved (on target, not a goal)
   constexpr double BLOCK_BAND = 0.15; // shot-outcome mass: blocked (off target)
   constexpr double SAVE_CORNER_CHANCE =
     0.9; // of saved shots, fraction that become a corner instead
   constexpr double BLOCK_CORNER_CHANCE =
     0.95; // of blocked shots, fraction that become a corner instead
-  constexpr double PROBE_CORNER_CHANCE = 0.7; // a non-shot attacking probe can still win a corner
+  constexpr double PROBE_CORNER_CHANCE = 0.85; // a non-shot attacking probe can still win a corner
 
   // ---- Fouls & cards ------------------------------------------------------
   // A foul check runs every minute for whichever team doesn't have the
   // ball; a foul can then escalate into a card, and a repeat card can
   // escalate into a red.
-  constexpr double FOUL_BASE_RATE = 0.26; // baseline per-minute foul chance for the defending team
+  constexpr double FOUL_BASE_RATE = 0.29; // baseline per-minute foul chance for the defending team
   constexpr double FOUL_DISCIPLINE_BASE =
     0.3; // foul-rate floor even for a perfectly disciplined team
   constexpr double FOUL_DISCIPLINE_SCALE =
     1.4;                                  // how much poor discipline (0..1) amplifies the foul rate
-  constexpr double CARD_BASE_RATE = 0.20; // baseline chance a foul is carded
+  constexpr double CARD_BASE_RATE = 0.22; // baseline chance a foul is carded
   constexpr double CARD_DISCIPLINE_BASE =
     0.5; // card-rate floor even for a perfectly disciplined team
   constexpr double SECOND_YELLOW_CHANCE =
-    0.08; // chance a repeat card is a second yellow rather than a fresh yellow
+    0.035; // chance a repeat card is a second yellow rather than a fresh yellow
   constexpr double STRAIGHT_RED_CHANCE =
-    0.015; // chance a first card is a straight red rather than a yellow
+    0.006; // chance a first card is a straight red rather than a yellow
   constexpr double RED_CARD_PENALTY =
     0.85; // effective-stat multiplier for a team playing a man down
 
@@ -115,10 +123,10 @@ namespace footbsim::tuning
   // (NONE) to a true fortress (MAXIMUM). MODERATE is the default and is
   // what the realism tuning pass above was calibrated against.
   constexpr double HOME_ADVANTAGE_NONE = 1.00; // neutral venue, e.g. a cup final on neutral ground
-  constexpr double HOME_ADVANTAGE_SLIGHT = 1.03;   // mild edge
-  constexpr double HOME_ADVANTAGE_MODERATE = 1.07; // typical top-flight home crowd (default)
-  constexpr double HOME_ADVANTAGE_STRONG = 1.11;   // loud, hostile away experience
-  constexpr double HOME_ADVANTAGE_MAXIMUM = 1.15;  // true fortress venue
+  constexpr double HOME_ADVANTAGE_SLIGHT = 1.22;   // mild edge
+  constexpr double HOME_ADVANTAGE_MODERATE = 1.26; // typical top-flight home crowd (default)
+  constexpr double HOME_ADVANTAGE_STRONG = 1.30;   // loud, hostile away experience
+  constexpr double HOME_ADVANTAGE_MAXIMUM = 1.34;  // true fortress venue
 
   // ---- Referee style ---------------------------------------------------
   // Discrete card-issuing characteristic for the match official. BALANCED

@@ -53,9 +53,14 @@ namespace footbsim
 
   // Probability that "attacker" wins a duel against "defender" -- used for
   // zone advancement, shot outcomes, and first-possession rolls alike.
+  // `bias` shifts the baseline for two evenly-matched sides away from a
+  // 50/50 coin flip (e.g. possession retention, where real passing success
+  // is well above chance); leave at 0 for duels that should be a true
+  // coin flip between equal sides (kickoff, goal conversion).
   double DuelProbability(double effectiveAttacker,
                          double effectiveDefender,
-                         double steepness = tuning::ZONE_DUEL_STEEPNESS);
+                         double steepness = tuning::ZONE_DUEL_STEEPNESS,
+                         double bias = 0.0);
 
   // ---- Engine ---------------------------------------------------------------
 

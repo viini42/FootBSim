@@ -49,7 +49,8 @@ TEST_CASE("poor stamina teams decay faster than fit teams", "[stamina]")
   CHECK(tired_decay < fit_decay);
 }
 
-TEST_CASE("home advantage multiplier increases effective attack", "[effective_stats][home_advantage]")
+TEST_CASE("home advantage multiplier increases effective attack",
+          "[effective_stats][home_advantage]")
 {
   TeamStats stats;
   stats.attack = 60;
@@ -61,7 +62,8 @@ TEST_CASE("home advantage multiplier increases effective attack", "[effective_st
   CHECK(boosted > neutral);
 }
 
-TEST_CASE("weather penalty reduces effective attack but not below floor", "[effective_stats][weather]")
+TEST_CASE("weather penalty reduces effective attack but not below floor",
+          "[effective_stats][weather]")
 {
   TeamStats stats;
   stats.attack = 50;
