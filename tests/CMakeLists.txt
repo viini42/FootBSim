@@ -16,7 +16,7 @@ add_executable(footbsim_tests
 target_link_libraries(footbsim_tests PRIVATE footbsim_core Catch2::Catch2WithMain)
 footbsim_set_warnings(footbsim_tests)
 
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
 include(CTest)
 include(Catch)
 catch_discover_tests(footbsim_tests)
