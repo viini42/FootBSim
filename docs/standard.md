@@ -58,10 +58,20 @@ Practical rule of thumb:
     choose infra: when changing how the project is built, organized or tooled
     choose ref: when reshaping code without intending a behavior change
 
-
 ### Commit level
 
 Always atomical commits that can be build when needed to checkout.
 Each commit does one small things.
 
 For big changes, create branches and commit them gradually.
+
+## Code styling
+
+- Name header files with hpp extension.
+- Use anonymous namespaces in cpp files for utility/auxiliary functions.
+- In cpp files, do not create [named] namespaces blocks. Prefer the syntax `my_namespace::MyClass::MyFunction`.
+- Four maximum levels of indentation. For example, 1st level: function body, 2nd level: if body, 3rd level: for body,
+  4th level: statements. If a deeper level is needed, refactor to another function.
+- Maximum of 4 function parameters, more than that should use structs.
+- No `new` or `delete` call (neither `malloc` or `free`), use smart pointers for dynamic memory allocation.
+- 
