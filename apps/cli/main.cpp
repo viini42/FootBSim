@@ -17,13 +17,13 @@ int main(int argc, char** argv)
   const footbsim::TeamStats home = footbsim::rosters::bra2025::Mirassol();
   const footbsim::TeamStats away = footbsim::rosters::bra2025::Coritiba();
 
-  footbsim::MatchContext context(home, away);
+  footbsim::MatchContext context{ home, away };
   context.home_advantage = footbsim::HomeAdvantageLevel::SLIGHT;
   context.weather = footbsim::Weather::CLEAR;
   context.referee_strictness = footbsim::RefereeStyle::BALANCED;
   context.stakes = footbsim::Stakes::NORMAL;
 
-  footbsim::MatchEngine engine(home, away, context, seed);
+  footbsim::MatchEngine engine{ home, away, context, seed };
   const footbsim::MatchResult result = engine.Simulate();
 
   result.PrintLog(home.name, away.name);

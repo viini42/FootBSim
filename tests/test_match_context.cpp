@@ -97,7 +97,7 @@ TEST_CASE("MatchContext derives SAME_CITY for a same-city derby",
 {
   const TeamStats home = MakeLocatedTeam("Rio de Janeiro", "RJ", "Southeast");
   const TeamStats away = MakeLocatedTeam("Rio de Janeiro", "RJ", "Southeast");
-  const MatchContext context(home, away);
+  const MatchContext context{ home, away };
   CHECK(context.travel_fatigue == TravelFatigueLevel::SAME_CITY);
 }
 
@@ -106,7 +106,7 @@ TEST_CASE("MatchContext derives DIFFERENT_CITY for a same-state different-city t
 {
   const TeamStats home = MakeLocatedTeam("São Paulo", "SP", "Southeast");
   const TeamStats away = MakeLocatedTeam("Santos", "SP", "Southeast");
-  const MatchContext context(home, away);
+  const MatchContext context{ home, away };
   CHECK(context.travel_fatigue == TravelFatigueLevel::DIFFERENT_CITY);
 }
 
@@ -115,7 +115,7 @@ TEST_CASE("MatchContext derives DIFFERENT_STATE for a same-region different-stat
 {
   const TeamStats home = MakeLocatedTeam("Rio de Janeiro", "RJ", "Southeast");
   const TeamStats away = MakeLocatedTeam("São Paulo", "SP", "Southeast");
-  const MatchContext context(home, away);
+  const MatchContext context{ home, away };
   CHECK(context.travel_fatigue == TravelFatigueLevel::DIFFERENT_STATE);
 }
 
@@ -124,7 +124,7 @@ TEST_CASE("MatchContext derives DIFFERENT_REGION for a cross-region trip",
 {
   const TeamStats home = MakeLocatedTeam("Rio de Janeiro", "RJ", "Southeast");
   const TeamStats away = MakeLocatedTeam("Porto Alegre", "RS", "South");
-  const MatchContext context(home, away);
+  const MatchContext context{ home, away };
   CHECK(context.travel_fatigue == TravelFatigueLevel::DIFFERENT_REGION);
 }
 
@@ -133,7 +133,7 @@ TEST_CASE("MatchContext leaves every other field at its neutral default",
 {
   const TeamStats home = MakeLocatedTeam("Rio de Janeiro", "RJ", "Southeast");
   const TeamStats away = MakeLocatedTeam("Porto Alegre", "RS", "South");
-  const MatchContext context(home, away);
+  const MatchContext context{ home, away };
 
   CHECK(context.home_advantage == HomeAdvantageLevel::MODERATE);
   CHECK(context.weather == footbsim::Weather::CLEAR);

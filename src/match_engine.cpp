@@ -89,7 +89,7 @@ namespace footbsim
                            TeamStats away,
                            MatchContext context,
                            std::optional<std::uint64_t> seed) :
-      m_home(std::move(home)), m_away(std::move(away)), m_context(context), m_rng(seed)
+      m_home{ std::move(home) }, m_away{ std::move(away) }, m_context{ context }, m_rng{ seed }
   {
   }
 
