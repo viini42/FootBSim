@@ -74,4 +74,4 @@ For big changes, create branches and commit them gradually.
   4th level: statements. If a deeper level is needed, refactor to another function.
 - Maximum of 4 function parameters, more than that should use structs.
 - No `new` or `delete` call (neither `malloc` or `free`), use smart pointers for dynamic memory allocation.
-- 
+- Call object constructor with braces {}
