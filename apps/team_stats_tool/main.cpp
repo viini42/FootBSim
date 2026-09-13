@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -17,7 +18,16 @@ using footbsim::utils::TeamRawStats;
 namespace
 {
 
-  constexpr int EXPECTED_COLUMNS = 17;
+  constexpr int EXPECTED_COLUMNS = 18;
+
+  // One CSV row: a team's raw stats plus which division it belongs to,
+  // expressed as that division's league_strength_offset. Rows sharing the
+  // same offset are z-scored together as one division (see LoadTeams).
+  struct TeamRow
+  {
+    TeamRawStats stats;
+    double league_offset = 0.0;
+  };
 
   std::vector<std::string> SplitCsvLine(const std::string& line)
   {
@@ -31,7 +41,7 @@ namespace
     return fields;
   }
 
-  std::vector<TeamRawStats> LoadTeams(const std::string& path)
+  std::vector<TeamRow> LoadTeams(const std::string& path)
   {
     std::ifstream in(path);
     if (!in)
@@ -39,7 +49,7 @@ namespace
       throw std::runtime_error("could not open input file: " + path);
     }
 
-    std::vector<TeamRawStats> teams;
+    std::vector<TeamRow> rows;
     std::string line;
     bool first_line = true;
     int line_number = 0;
@@ -64,7 +74,8 @@ namespace
                                  std::to_string(f.size()));
       }
 
-      TeamRawStats t;
+      TeamRow row;
+      TeamRawStats& t = row.stats;
       t.name = f[0];
       t.matches = std::stoi(f[1]);
       t.wins = std::stoi(f[2]);
@@ -82,10 +93,42 @@ namespace
       t.corners = std::stoi(f[14]);
       t.yellow_cards = std::stoi(f[15]);
       t.red_cards = std::stoi(f[16]);
-      teams.push_back(std::move(t));
+      row.league_offset = std::stod(f[17]);
+      rows.push_back(std::move(row));
     }
 
-    return teams;
+    return rows;
+  }
+
+  // Derives every row, z-scoring each division (rows sharing a
+  // league_offset) only against its own division-mates -- mixing divisions
+  // into one DeriveTeamStats() call would defeat its within-batch z-score.
+  // Returns results in the same order as `rows`.
+  std::vector<TeamStats> DeriveByDivision(const std::vector<TeamRow>& rows)
+  {
+    std::map<double, std::vector<std::size_t>> divisions;
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+      divisions[rows[i].league_offset].push_back(i);
+    }
+
+    std::vector<TeamStats> derived(rows.size());
+    for (const auto& [offset, indices] : divisions)
+    {
+      std::vector<TeamRawStats> division_stats;
+      division_stats.reserve(indices.size());
+      for (std::size_t i : indices)
+      {
+        division_stats.push_back(rows[i].stats);
+      }
+
+      const std::vector<TeamStats> division_derived = DeriveTeamStats(division_stats, offset);
+      for (std::size_t j = 0; j < indices.size(); ++j)
+      {
+        derived[indices[j]] = division_derived[j];
+      }
+    }
+    return derived;
   }
 
   std::string CapitalizeWord(const std::string& word)
@@ -205,30 +248,33 @@ namespace
 
   void PrintUsage()
   {
-    std::cerr << "usage: footbsim_team_stats_tool <input.csv> [league_strength_offset]\n\n"
+    std::cerr << "usage: footbsim_team_stats_tool <input.csv>\n\n"
               << "CSV columns (one header row, then one row per team):\n"
               << "  name,matches,wins,draws,losses,goals_for,goals_against,shots,\n"
               << "  shots_on_target,shots_against,shots_on_target_against,\n"
-              << "  possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,red_cards\n\n"
+              << "  possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,\n"
+              << "  red_cards,league_offset\n\n"
               << "All counting stats are SEASON TOTALS, except possession_pct and\n"
               << "pass_accuracy_pct, which are the team's season AVERAGE percentage.\n"
               << "shots_against/shots_on_target_against are totals faced (i.e. what\n"
               << "opponents managed against this team), not this team's own shots.\n\n"
-              << "Put every team you want compared together in one file -- stats are\n"
-              << "ranked relative to the other rows in that same file, so a single\n"
-              << "team on its own will just come back exactly average on everything.\n\n"
+              << "Rows are ranked relative to other rows sharing the same\n"
+              << "league_offset -- that's how multiple divisions can live in one\n"
+              << "file: each distinct league_offset value is z-scored only against\n"
+              << "its own rows (mixing divisions into one z-score would defeat the\n"
+              << "within-batch ranking), then that division's resulting\n"
+              << "attack/defense/midfield is shifted by its league_offset and\n"
+              << "re-clamped to [5,95] -- e.g. 0.0 for a reference division and a\n"
+              << "negative offset for a weaker one, so both land on one shared\n"
+              << "absolute scale. discipline/aggression are style, not competitive\n"
+              << "strength, so they're unaffected by the offset. A division with\n"
+              << "only one row (or an unpaired league_offset) comes back exactly\n"
+              << "50 on everything, since it can only be compared to itself.\n\n"
               << "attack/defense/midfield/discipline/aggression are derived; form,\n"
               << "stamina and morale can't be (they're dynamic, not season constants),\n"
               << "so they come back at TeamStats' own defaults (0 / 100 / 50). Edit\n"
               << "those by hand afterward if you want non-neutral values.\n\n"
-              << "See apps/team_stats_tool/example_teams.csv for a filled-in example.\n\n"
-              << "[league_strength_offset] (default 0.0) shifts the resulting\n"
-              << "attack/defense/midfield by a flat number of points, re-clamped to\n"
-              << "[5,95]. Use it to place a weaker division on the same absolute\n"
-              << "scale as another: run this tool once per division (never feed both\n"
-              << "divisions' CSVs in together -- that still breaks the within-batch\n"
-              << "ranking), passing 0.0 for the reference division and a negative\n"
-              << "offset for the weaker one, then combine the two pasted rosters.\n";
+              << "See apps/team_stats_tool/example_teams.csv for a filled-in example.\n";
   }
 
 } // namespace
@@ -241,15 +287,10 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  std::vector<TeamRawStats> teams;
-  double league_strength_offset = 0.0;
+  std::vector<TeamRow> rows;
   try
   {
-    teams = LoadTeams(argv[1]);
-    if (argc >= 3)
-    {
-      league_strength_offset = std::stod(argv[2]);
-    }
+    rows = LoadTeams(argv[1]);
   }
   catch (const std::exception& e)
   {
@@ -257,13 +298,13 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  if (teams.empty())
+  if (rows.empty())
   {
     std::cerr << "error: no teams found in " << argv[1] << "\n";
     return 1;
   }
 
-  const std::vector<TeamStats> derived = DeriveTeamStats(teams, league_strength_offset);
+  const std::vector<TeamStats> derived = DeriveByDivision(rows);
 
   std::cout << std::left << std::setw(20) << "Team" << std::right << std::setw(6) << "ATT"
             << std::setw(6) << "DEF" << std::setw(6) << "MID" << std::setw(6) << "DISC"

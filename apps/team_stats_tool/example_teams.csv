@@ -1,4 +1,4 @@
-name,matches,wins,draws,losses,goals_for,goals_against,shots,shots_on_target,shots_against,shots_on_target_against,possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,red_cards
-Flamengo,38,23,10,5,78,27,531,199,328,122,60.9,92.3,495,232,79,5
-Palmeiras,38,23,7,8,66,33,514,197,387,139,52.4,90.0,507,225,75,4
-Juventude,38,9,8,21,35,69,373,133,500,184,44.2,87.8,568,155,106,5
+name,matches,wins,draws,losses,goals_for,goals_against,shots,shots_on_target,shots_against,shots_on_target_against,possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,red_cards,league_offset
+Flamengo,38,23,10,5,78,27,531,199,328,122,60.9,92.3,495,232,79,5,0
+Palmeiras,38,23,7,8,66,33,514,197,387,139,52.4,90.0,507,225,75,4,0
+Juventude,38,9,8,21,35,69,373,133,500,184,44.2,87.8,568,155,106,5,0
