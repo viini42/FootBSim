@@ -5,16 +5,20 @@
 namespace footbsim::rosters::bra2025
 {
 
-  // TeamStats for all 20 Campeonato Brasileiro Série A 2025 clubs, derived
-  // from the full 380-match log (per-match shots, shots on target,
-  // possession, pass accuracy, fouls, corners, cards and results).
+  // TeamStats for all 60 clubs across the three tiers of Brazilian football
+  // in 2025 -- Série A (20 clubs, full 380-match season), Série B (20
+  // clubs, full 380-match season) and Série C (20 clubs, first-phase-only
+  // single round-robin, 190 matches, before the knockout stage the top 8
+  // go on to play) -- derived from each division's own match log (per-match
+  // shots, shots on target, possession, pass accuracy, fouls, corners,
+  // cards and results).
   //
   // Each of attack/defense/midfield blends a process-stat composite (how
   // the team actually played) with a results composite (points per game --
   // whether it actually worked). Both are independently z-scored across
-  // the 20 clubs as 50 + 8*z (clamped to [5,95]), then blended 75%
-  // process / 25% results. discipline and aggression are style measures,
-  // not blended with results, since neither is "quality":
+  // the 20 clubs of that division as 50 + 8*z (clamped to [5,95]), then
+  // blended 75% process / 25% results. discipline and aggression are style
+  // measures, not blended with results, since neither is "quality":
   //
   //   attack_process  = 0.7 * SOT/game + 0.3 * goals/game
   //   defense_process = 0.7 * SOT allowed/game + 0.3 * goals allowed/game (inverted)
@@ -26,16 +30,27 @@ namespace footbsim::rosters::bra2025
   //   aggression = 0.7 * shots/game + 0.3 * corners/game
   //
   // The results blend was added after validating against every one of the
-  // 380 real fixtures with the tuned engine: process stats alone missed
-  // finishing quality and game management that results capture, and
-  // blending them in raised result-direction prediction accuracy from
-  // 44.7% to 48.2% without moving the aggregate goals/cards/etc. targets
-  // the engine itself was tuned against.
+  // 380 real fixtures of the 2025 Série A season with the tuned engine:
+  // process stats alone missed finishing quality and game management that
+  // results capture, and blending them in raised result-direction
+  // prediction accuracy from 44.7% to 48.2% without moving the aggregate
+  // goals/cards/etc. targets the engine itself was tuned against.
+  //
+  // Série A is the reference division (league_offset 0.0); Série B and
+  // Série C are each a weaker division, so their attack/defense/midfield
+  // are shifted down by a flat league_offset (-8.0 and -16.0
+  // respectively, re-clamped to [5,95]) after their own division-only
+  // z-score, placing all three divisions on one shared absolute scale --
+  // see DeriveTeamStats() in team_stats_deriver.hpp for the mechanism, and
+  // apps/team_stats_tool/teams_a_b_c.csv (its league_offset column) for
+  // the source data this file was pasted from. discipline and aggression
+  // are unaffected by the offset, since they're style, not competitive
+  // strength.
   //
   // form, stamina and morale have no season-aggregate equivalent (form and
   // morale are inherently dynamic, match-to-match values; stamina reflects
   // matchday fitness), so every club gets the same neutral baseline:
-  // form = 0, stamina = 85, morale = 50.
+  // form = 0, stamina = 100, morale = 50.
 
   // Paste into a roster header:
 
@@ -633,6 +648,306 @@ namespace footbsim::rosters::bra2025
     s.midfield = 47.3;
     s.discipline = 55.2;
     s.aggression = 60.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats ABC()
+  {
+    TeamStats s;
+    s.name = "ABC";
+    s.attack = 28.3;
+    s.defense = 38.0;
+    s.midfield = 22.6;
+    s.discipline = 56.0;
+    s.aggression = 49.3;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Anapolis()
+  {
+    TeamStats s;
+    s.name = "Anápolis";
+    s.attack = 25.5;
+    s.defense = 31.1;
+    s.midfield = 23.2;
+    s.discipline = 55.1;
+    s.aggression = 40.8;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Botafogopb()
+  {
+    TeamStats s;
+    s.name = "Botafogo-PB";
+    s.attack = 38.0;
+    s.defense = 21.1;
+    s.midfield = 37.6;
+    s.discipline = 43.9;
+    s.aggression = 57.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Brusque()
+  {
+    TeamStats s;
+    s.name = "Brusque";
+    s.attack = 29.0;
+    s.defense = 34.3;
+    s.midfield = 32.0;
+    s.discipline = 49.2;
+    s.aggression = 41.9;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats CSA()
+  {
+    TeamStats s;
+    s.name = "CSA";
+    s.attack = 37.3;
+    s.defense = 29.2;
+    s.midfield = 40.6;
+    s.discipline = 46.2;
+    s.aggression = 59.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Caxias()
+  {
+    TeamStats s;
+    s.name = "Caxias";
+    s.attack = 39.6;
+    s.defense = 32.9;
+    s.midfield = 40.3;
+    s.discipline = 52.5;
+    s.aggression = 48.4;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Confianca()
+  {
+    TeamStats s;
+    s.name = "Confiança";
+    s.attack = 43.6;
+    s.defense = 31.9;
+    s.midfield = 39.5;
+    s.discipline = 54.0;
+    s.aggression = 63.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Figueirense()
+  {
+    TeamStats s;
+    s.name = "Figueirense";
+    s.attack = 40.1;
+    s.defense = 30.7;
+    s.midfield = 35.0;
+    s.discipline = 43.8;
+    s.aggression = 56.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Floresta()
+  {
+    TeamStats s;
+    s.name = "Floresta";
+    s.attack = 30.0;
+    s.defense = 45.0;
+    s.midfield = 26.8;
+    s.discipline = 46.9;
+    s.aggression = 41.2;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Guarani()
+  {
+    TeamStats s;
+    s.name = "Guarani";
+    s.attack = 34.6;
+    s.defense = 34.3;
+    s.midfield = 42.5;
+    s.discipline = 39.9;
+    s.aggression = 52.7;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Itabaiana()
+  {
+    TeamStats s;
+    s.name = "Itabaiana";
+    s.attack = 27.1;
+    s.defense = 41.1;
+    s.midfield = 23.7;
+    s.discipline = 55.1;
+    s.aggression = 38.6;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Ituano()
+  {
+    TeamStats s;
+    s.name = "Ituano";
+    s.attack = 29.3;
+    s.defense = 27.4;
+    s.midfield = 28.2;
+    s.discipline = 52.7;
+    s.aggression = 44.8;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Londrina()
+  {
+    TeamStats s;
+    s.name = "Londrina";
+    s.attack = 36.4;
+    s.defense = 38.3;
+    s.midfield = 36.3;
+    s.discipline = 53.8;
+    s.aggression = 52.9;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Maringa()
+  {
+    TeamStats s;
+    s.name = "Maringá";
+    s.attack = 47.8;
+    s.defense = 33.8;
+    s.midfield = 36.9;
+    s.discipline = 28.7;
+    s.aggression = 68.4;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Nautico()
+  {
+    TeamStats s;
+    s.name = "Náutico";
+    s.attack = 39.7;
+    s.defense = 49.8;
+    s.midfield = 39.8;
+    s.discipline = 51.1;
+    s.aggression = 49.7;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats PontePreta()
+  {
+    TeamStats s;
+    s.name = "Ponte Preta";
+    s.attack = 38.9;
+    s.defense = 38.7;
+    s.midfield = 45.3;
+    s.discipline = 39.6;
+    s.aggression = 50.3;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Retro()
+  {
+    TeamStats s;
+    s.name = "Retrô";
+    s.attack = 23.8;
+    s.defense = 23.0;
+    s.midfield = 27.5;
+    s.discipline = 52.6;
+    s.aggression = 45.0;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats SaoBernardo()
+  {
+    TeamStats s;
+    s.name = "São Bernardo";
+    s.attack = 40.4;
+    s.defense = 40.9;
+    s.midfield = 43.8;
+    s.discipline = 58.3;
+    s.aggression = 56.8;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Tombense()
+  {
+    TeamStats s;
+    s.name = "Tombense";
+    s.attack = 23.8;
+    s.defense = 27.2;
+    s.midfield = 25.9;
+    s.discipline = 67.2;
+    s.aggression = 40.5;
+    s.form = 0.0;
+    s.stamina = 100.0;
+    s.morale = 50.0;
+    return s;
+  }
+
+  inline TeamStats Ypiranga()
+  {
+    TeamStats s;
+    s.name = "Ypiranga";
+    s.attack = 26.8;
+    s.defense = 31.2;
+    s.midfield = 32.5;
+    s.discipline = 53.4;
+    s.aggression = 43.9;
     s.form = 0.0;
     s.stamina = 100.0;
     s.morale = 50.0;
