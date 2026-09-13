@@ -139,6 +139,47 @@ TEST_CASE("derived stats stay within the [5,95] band even for extreme inputs",
   }
 }
 
+TEST_CASE("league_strength_offset shifts attack/defense/midfield but not discipline/aggression",
+          "[team_stats_deriver]")
+{
+  const std::vector<TeamRawStats> teams = { MakeRaw("Team A"), MakeRaw("Team B") };
+
+  const std::vector<TeamStats> baseline = DeriveTeamStats(teams);
+  const std::vector<TeamStats> shifted = DeriveTeamStats(teams, -8.0);
+
+  REQUIRE(shifted.size() == baseline.size());
+  for (std::size_t i = 0; i < baseline.size(); ++i)
+  {
+    CHECK(shifted[i].attack == baseline[i].attack - 8.0);
+    CHECK(shifted[i].defense == baseline[i].defense - 8.0);
+    CHECK(shifted[i].midfield == baseline[i].midfield - 8.0);
+    CHECK(shifted[i].discipline == baseline[i].discipline);
+    CHECK(shifted[i].aggression == baseline[i].aggression);
+  }
+}
+
+TEST_CASE("league_strength_offset stays clamped to [5,95] even at the extremes",
+          "[team_stats_deriver]")
+{
+  const std::vector<TeamRawStats> teams = { MakeRaw("Team A"), MakeRaw("Team B") };
+
+  const std::vector<TeamStats> pushed_down = DeriveTeamStats(teams, -100.0);
+  const std::vector<TeamStats> pushed_up = DeriveTeamStats(teams, 100.0);
+
+  for (const TeamStats& s : pushed_down)
+  {
+    CHECK(s.attack == 5.0);
+    CHECK(s.defense == 5.0);
+    CHECK(s.midfield == 5.0);
+  }
+  for (const TeamStats& s : pushed_up)
+  {
+    CHECK(s.attack == 95.0);
+    CHECK(s.defense == 95.0);
+    CHECK(s.midfield == 95.0);
+  }
+}
+
 TEST_CASE("form, stamina and morale are left at neutral defaults", "[team_stats_deriver]")
 {
   const std::vector<TeamStats> derived = DeriveTeamStats({ MakeRaw("Team A"), MakeRaw("Team B") });

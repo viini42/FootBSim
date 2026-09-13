@@ -205,7 +205,7 @@ namespace
 
   void PrintUsage()
   {
-    std::cerr << "usage: footbsim_team_stats_tool <input.csv>\n\n"
+    std::cerr << "usage: footbsim_team_stats_tool <input.csv> [league_strength_offset]\n\n"
               << "CSV columns (one header row, then one row per team):\n"
               << "  name,matches,wins,draws,losses,goals_for,goals_against,shots,\n"
               << "  shots_on_target,shots_against,shots_on_target_against,\n"
@@ -221,7 +221,14 @@ namespace
               << "stamina and morale can't be (they're dynamic, not season constants),\n"
               << "so they come back at TeamStats' own defaults (0 / 100 / 50). Edit\n"
               << "those by hand afterward if you want non-neutral values.\n\n"
-              << "See apps/team_stats_tool/example_teams.csv for a filled-in example.\n";
+              << "See apps/team_stats_tool/example_teams.csv for a filled-in example.\n\n"
+              << "[league_strength_offset] (default 0.0) shifts the resulting\n"
+              << "attack/defense/midfield by a flat number of points, re-clamped to\n"
+              << "[5,95]. Use it to place a weaker division on the same absolute\n"
+              << "scale as another: run this tool once per division (never feed both\n"
+              << "divisions' CSVs in together -- that still breaks the within-batch\n"
+              << "ranking), passing 0.0 for the reference division and a negative\n"
+              << "offset for the weaker one, then combine the two pasted rosters.\n";
   }
 
 } // namespace
@@ -235,9 +242,14 @@ int main(int argc, char** argv)
   }
 
   std::vector<TeamRawStats> teams;
+  double league_strength_offset = 0.0;
   try
   {
     teams = LoadTeams(argv[1]);
+    if (argc >= 3)
+    {
+      league_strength_offset = std::stod(argv[2]);
+    }
   }
   catch (const std::exception& e)
   {
@@ -251,7 +263,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  const std::vector<TeamStats> derived = DeriveTeamStats(teams);
+  const std::vector<TeamStats> derived = DeriveTeamStats(teams, league_strength_offset);
 
   std::cout << std::left << std::setw(20) << "Team" << std::right << std::setw(6) << "ATT"
             << std::setw(6) << "DEF" << std::setw(6) << "MID" << std::setw(6) << "DISC"

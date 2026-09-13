@@ -81,7 +81,8 @@ namespace footbsim::utils
 
   } // namespace
 
-  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams)
+  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
+                                          double league_strength_offset)
   {
     const std::size_t n = teams.size();
 
@@ -132,14 +133,18 @@ namespace footbsim::utils
     out.reserve(n);
     for (std::size_t i = 0; i < n; ++i)
     {
+      const double attack_blend =
+        (1.0 - RESULTS_BLEND_WEIGHT) * attack_process[i] + RESULTS_BLEND_WEIGHT * results[i];
+      const double defense_blend =
+        (1.0 - RESULTS_BLEND_WEIGHT) * defense_process[i] + RESULTS_BLEND_WEIGHT * results[i];
+      const double midfield_blend =
+        (1.0 - RESULTS_BLEND_WEIGHT) * midfield_process[i] + RESULTS_BLEND_WEIGHT * results[i];
+
       TeamStats s;
       s.name = teams[i].name;
-      s.attack =
-        (1.0 - RESULTS_BLEND_WEIGHT) * attack_process[i] + RESULTS_BLEND_WEIGHT * results[i];
-      s.defense =
-        (1.0 - RESULTS_BLEND_WEIGHT) * defense_process[i] + RESULTS_BLEND_WEIGHT * results[i];
-      s.midfield =
-        (1.0 - RESULTS_BLEND_WEIGHT) * midfield_process[i] + RESULTS_BLEND_WEIGHT * results[i];
+      s.attack = std::clamp(attack_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
+      s.defense = std::clamp(defense_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
+      s.midfield = std::clamp(midfield_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
       s.discipline = discipline[i];
       s.aggression = aggression[i];
       // form, stamina, morale left at TeamStats' neutral defaults.

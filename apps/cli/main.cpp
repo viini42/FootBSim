@@ -1,4 +1,4 @@
-#include "brasileirao_2025.hpp"
+#include "teams_serie_a_and_b.hpp"
 #include "footbsim/match_context.hpp"
 #include "footbsim/match_engine.hpp"
 #include "footbsim/team_stats.hpp"
@@ -8,14 +8,14 @@
 
 int main(int argc, char** argv)
 {
-  std::optional<std::uint64_t> seed = 0;
+  std::optional<std::uint64_t> seed;
   if (argc > 1)
   {
     seed = static_cast<std::uint64_t>(std::stoull(argv[1]));
   }
 
-  const footbsim::TeamStats home = footbsim::rosters::bra2025::Flamengo();
-  const footbsim::TeamStats away = footbsim::rosters::bra2025::Palmeiras();
+  const footbsim::TeamStats home = footbsim::rosters::bra2025::Mirassol();
+  const footbsim::TeamStats away = footbsim::rosters::bra2025::Coritiba();
 
   footbsim::MatchContext context;
   context.home_advantage = footbsim::HomeAdvantageLevel::SLIGHT;

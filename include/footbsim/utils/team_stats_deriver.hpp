@@ -59,6 +59,18 @@ namespace footbsim::utils
   // stamina reflects matchday fitness) and are left at TeamStats' neutral
   // defaults -- set them yourself afterward if you want non-neutral
   // values.
-  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams);
+  //
+  // `league_strength_offset` shifts the resulting attack/defense/midfield
+  // (re-clamped to [5,95]) by a flat number of points -- use it to place
+  // two separately-derived divisions onto one shared absolute scale, e.g.
+  // when combining a Campeonato Brasileiro Série A batch with a weaker
+  // Série B batch: derive each division with its own call (never mix
+  // divisions into one call -- that still defeats the within-batch
+  // z-score), passing 0.0 for the reference division and a negative
+  // offset for the weaker one, then concatenate the two returned vectors.
+  // discipline and aggression are style, not competitive strength, so
+  // they're unaffected by the offset.
+  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
+                                          double league_strength_offset = 0.0);
 
 } // namespace footbsim::utils
