@@ -22,6 +22,8 @@
 
 From .clang-format file in root project
 
+Always run clang-format on changed files before committing.
+
 ## Versioning rules
 
 ### Commit messages
