@@ -18,7 +18,7 @@ using footbsim::utils::TeamRawStats;
 namespace
 {
 
-  constexpr int EXPECTED_COLUMNS = 18;
+  constexpr int EXPECTED_COLUMNS = 21;
 
   // One CSV row: a team's raw stats plus which division it belongs to,
   // expressed as that division's league_strength_offset. Rows sharing the
@@ -94,6 +94,9 @@ namespace
       t.yellow_cards = std::stoi(f[15]);
       t.red_cards = std::stoi(f[16]);
       row.league_offset = std::stod(f[17]);
+      t.city = f[18];
+      t.state = f[19];
+      t.region = f[20];
       rows.push_back(std::move(row));
     }
 
@@ -274,6 +277,9 @@ namespace
       std::cout << "  {\n";
       std::cout << "    TeamStats s;\n";
       std::cout << "    s.name = \"" << stat.name << "\";\n";
+      std::cout << "    s.city = \"" << stat.city << "\";\n";
+      std::cout << "    s.state = \"" << stat.state << "\";\n";
+      std::cout << "    s.region = \"" << stat.region << "\";\n";
       std::cout << std::fixed << std::setprecision(1);
       std::cout << "    s.attack = " << stat.attack << ";\n";
       std::cout << "    s.defense = " << stat.defense << ";\n";
@@ -290,13 +296,15 @@ namespace
 
   void PrintCsvRoster(const std::vector<TeamStats>& derived)
   {
-    std::cout << "name,attack,defense,midfield,discipline,aggression,form,stamina,morale\n";
+    std::cout << "name,attack,defense,midfield,discipline,aggression,form,stamina,morale,city,"
+                 "state,region\n";
     std::cout << std::fixed << std::setprecision(1);
     for (const TeamStats& stat : derived)
     {
       std::cout << stat.name << ',' << stat.attack << ',' << stat.defense << ',' << stat.midfield
                 << ',' << stat.discipline << ',' << stat.aggression << ',' << stat.form << ','
-                << stat.stamina << ',' << stat.morale << '\n';
+                << stat.stamina << ',' << stat.morale << ',' << stat.city << ',' << stat.state << ','
+                << stat.region << '\n';
     }
   }
 
@@ -307,17 +315,21 @@ namespace
               << "derived roster is printed: 'cpp' pastes TeamStats factory\n"
               << "functions ready for a roster header, 'csv' prints\n"
               << "name,attack,defense,midfield,discipline,aggression,form,stamina,\n"
-              << "morale rows ready to feed back into another tool or load at\n"
-              << "runtime.\n\n"
+              << "morale,city,state,region rows ready to feed back into another tool\n"
+              << "or load at runtime.\n\n"
               << "CSV columns of the INPUT file (one header row, then one row per team):\n"
               << "  name,matches,wins,draws,losses,goals_for,goals_against,shots,\n"
               << "  shots_on_target,shots_against,shots_on_target_against,\n"
               << "  possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,\n"
-              << "  red_cards,league_offset\n\n"
+              << "  red_cards,league_offset,city,state,region\n\n"
               << "All counting stats are SEASON TOTALS, except possession_pct and\n"
               << "pass_accuracy_pct, which are the team's season AVERAGE percentage.\n"
               << "shots_against/shots_on_target_against are totals faced (i.e. what\n"
-              << "opponents managed against this team), not this team's own shots.\n\n"
+              << "opponents managed against this team), not this team's own shots.\n"
+              << "city/state/region are identity/metadata (state as its 2-letter\n"
+              << "Brazilian abbreviation, region as one of North/Northeast/\n"
+              << "Central-West/Southeast/South), passed straight through to the\n"
+              << "output untouched -- they play no part in deriving stats.\n\n"
               << "Rows are ranked relative to other rows sharing the same\n"
               << "league_offset -- that's how multiple divisions can live in one\n"
               << "file: each distinct league_offset value is z-scored only against\n"

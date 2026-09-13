@@ -21,6 +21,14 @@ namespace footbsim::utils
   struct TeamRawStats
   {
     std::string name;
+
+    // Home location -- identity/metadata, passed straight through to the
+    // derived TeamStats untouched, not used in any derivation formula.
+    // See TeamStats::city/state/region for the field conventions.
+    std::string city;
+    std::string state;
+    std::string region;
+
     int matches = 0;
     int wins = 0;
     int draws = 0;

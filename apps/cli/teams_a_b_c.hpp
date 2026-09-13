@@ -51,6 +51,9 @@ namespace footbsim::rosters::bra2025
   // morale are inherently dynamic, match-to-match values; stamina reflects
   // matchday fitness), so every club gets the same neutral baseline:
   // form = 0, stamina = 100, morale = 50.
+  //
+  // city/state/region are identity/metadata, not gameplay stats -- passed
+  // straight through from the source CSV, not derived.
 
   // Paste into a roster header:
 
@@ -58,6 +61,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Atlético-MG";
+    s.city = "Belo Horizonte";
+    s.state = "MG";
+    s.region = "Southeast";
     s.attack = 49.6;
     s.defense = 52.2;
     s.midfield = 52.1;
@@ -73,6 +79,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Bahia";
+    s.city = "Salvador";
+    s.state = "BA";
+    s.region = "Northeast";
     s.attack = 52.5;
     s.defense = 54.1;
     s.midfield = 57.6;
@@ -88,6 +97,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Botafogo";
+    s.city = "Rio de Janeiro";
+    s.state = "RJ";
+    s.region = "Southeast";
     s.attack = 59.5;
     s.defense = 57.8;
     s.midfield = 54.4;
@@ -103,6 +115,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Bragantino";
+    s.city = "Bragança Paulista";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 47.6;
     s.defense = 43.1;
     s.midfield = 46.5;
@@ -118,6 +133,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Ceará SC";
+    s.city = "Fortaleza";
+    s.state = "CE";
+    s.region = "Northeast";
     s.attack = 44.5;
     s.defense = 50.8;
     s.midfield = 37.8;
@@ -133,6 +151,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Corinthians";
+    s.city = "São Paulo";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 41.9;
     s.defense = 55.2;
     s.midfield = 55.3;
@@ -148,6 +169,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Cruzeiro";
+    s.city = "Belo Horizonte";
+    s.state = "MG";
+    s.region = "Southeast";
     s.attack = 57.9;
     s.defense = 56.2;
     s.midfield = 50.4;
@@ -163,6 +187,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "EC Vitória";
+    s.city = "Salvador";
+    s.state = "BA";
+    s.region = "Northeast";
     s.attack = 43.4;
     s.defense = 43.7;
     s.midfield = 39.3;
@@ -178,6 +205,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Flamengo";
+    s.city = "Rio de Janeiro";
+    s.state = "RJ";
+    s.region = "Southeast";
     s.attack = 65.8;
     s.defense = 63.7;
     s.midfield = 67.3;
@@ -193,6 +223,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Fluminense";
+    s.city = "Rio de Janeiro";
+    s.state = "RJ";
+    s.region = "Southeast";
     s.attack = 48.1;
     s.defense = 60.4;
     s.midfield = 54.7;
@@ -208,6 +241,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Fortaleza";
+    s.city = "Fortaleza";
+    s.state = "CE";
+    s.region = "Northeast";
     s.attack = 47.9;
     s.defense = 41.4;
     s.midfield = 41.7;
@@ -223,6 +259,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Grêmio";
+    s.city = "Porto Alegre";
+    s.state = "RS";
+    s.region = "South";
     s.attack = 48.9;
     s.defense = 45.5;
     s.midfield = 44.3;
@@ -238,6 +277,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Internacional";
+    s.city = "Porto Alegre";
+    s.state = "RS";
+    s.region = "South";
     s.attack = 51.6;
     s.defense = 49.3;
     s.midfield = 49.9;
@@ -253,6 +295,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Juventude";
+    s.city = "Caxias do Sul";
+    s.state = "RS";
+    s.region = "South";
     s.attack = 38.8;
     s.defense = 41.7;
     s.midfield = 40.6;
@@ -268,6 +313,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Mirassol";
+    s.city = "Mirassol";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 58.3;
     s.defense = 50.5;
     s.midfield = 54.3;
@@ -283,6 +331,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Palmeiras";
+    s.city = "São Paulo";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 63.6;
     s.defense = 59.4;
     s.midfield = 56.4;
@@ -298,6 +349,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Santos";
+    s.city = "Santos";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 47.2;
     s.defense = 46.4;
     s.midfield = 49.6;
@@ -313,6 +367,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Sport Recife";
+    s.city = "Recife";
+    s.state = "PE";
+    s.region = "Northeast";
     s.attack = 38.0;
     s.defense = 30.5;
     s.midfield = 40.5;
@@ -328,6 +385,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "São Paulo";
+    s.city = "São Paulo";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 42.1;
     s.defense = 50.4;
     s.midfield = 51.9;
@@ -343,6 +403,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Vasco da Gama";
+    s.city = "Rio de Janeiro";
+    s.state = "RJ";
+    s.region = "Southeast";
     s.attack = 52.7;
     s.defense = 47.6;
     s.midfield = 55.2;
@@ -358,6 +421,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Amazonas";
+    s.city = "Manaus";
+    s.state = "AM";
+    s.region = "North";
     s.attack = 28.0;
     s.defense = 35.0;
     s.midfield = 32.8;
@@ -373,6 +439,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "América-MG";
+    s.city = "Belo Horizonte";
+    s.state = "MG";
+    s.region = "Southeast";
     s.attack = 44.7;
     s.defense = 44.7;
     s.midfield = 48.0;
@@ -388,6 +457,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Athletic Club";
+    s.city = "São João del-Rei";
+    s.state = "MG";
+    s.region = "Southeast";
     s.attack = 36.2;
     s.defense = 36.1;
     s.midfield = 43.0;
@@ -403,6 +475,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Athletico-PR";
+    s.city = "Curitiba";
+    s.state = "PR";
+    s.region = "South";
     s.attack = 56.7;
     s.defense = 50.7;
     s.midfield = 47.8;
@@ -418,6 +493,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Atlético-GO";
+    s.city = "Goiânia";
+    s.state = "GO";
+    s.region = "Central-West";
     s.attack = 42.2;
     s.defense = 44.1;
     s.midfield = 43.0;
@@ -433,6 +511,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Avaí";
+    s.city = "Florianópolis";
+    s.state = "SC";
+    s.region = "South";
     s.attack = 49.5;
     s.defense = 36.9;
     s.midfield = 39.1;
@@ -448,6 +529,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Botafogo-SP";
+    s.city = "Ribeirão Preto";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 32.3;
     s.defense = 40.1;
     s.midfield = 35.3;
@@ -463,6 +547,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "CRB";
+    s.city = "Maceió";
+    s.state = "AL";
+    s.region = "Northeast";
     s.attack = 53.5;
     s.defense = 31.9;
     s.midfield = 57.3;
@@ -478,6 +565,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Chapecoense";
+    s.city = "Chapecó";
+    s.state = "SC";
+    s.region = "South";
     s.attack = 51.6;
     s.defense = 43.6;
     s.midfield = 39.7;
@@ -493,6 +583,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Coritiba";
+    s.city = "Curitiba";
+    s.state = "PR";
+    s.region = "South";
     s.attack = 38.1;
     s.defense = 53.0;
     s.midfield = 51.5;
@@ -508,6 +601,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Criciúma";
+    s.city = "Criciúma";
+    s.state = "SC";
+    s.region = "South";
     s.attack = 43.7;
     s.defense = 49.8;
     s.midfield = 40.7;
@@ -523,6 +619,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Cuiabá";
+    s.city = "Cuiabá";
+    s.state = "MT";
+    s.region = "Central-West";
     s.attack = 48.8;
     s.defense = 47.2;
     s.midfield = 41.3;
@@ -538,6 +637,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Ferroviária";
+    s.city = "Araraquara";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 38.9;
     s.defense = 32.6;
     s.midfield = 39.5;
@@ -553,6 +655,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Goiás";
+    s.city = "Goiânia";
+    s.state = "GO";
+    s.region = "Central-West";
     s.attack = 39.6;
     s.defense = 50.1;
     s.midfield = 40.2;
@@ -568,6 +673,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Novorizontino";
+    s.city = "Novo Horizonte";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 42.6;
     s.defense = 44.1;
     s.midfield = 44.8;
@@ -583,6 +691,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Operário-PR";
+    s.city = "Ponta Grossa";
+    s.state = "PR";
+    s.region = "South";
     s.attack = 39.6;
     s.defense = 50.3;
     s.midfield = 47.7;
@@ -598,6 +709,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Paysandu";
+    s.city = "Belém";
+    s.state = "PA";
+    s.region = "North";
     s.attack = 34.6;
     s.defense = 32.0;
     s.midfield = 29.9;
@@ -613,6 +727,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Remo";
+    s.city = "Belém";
+    s.state = "PA";
+    s.region = "North";
     s.attack = 43.4;
     s.defense = 32.6;
     s.midfield = 40.0;
@@ -628,6 +745,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Vila Nova";
+    s.city = "Goiânia";
+    s.state = "GO";
+    s.region = "Central-West";
     s.attack = 38.0;
     s.defense = 45.1;
     s.midfield = 31.1;
@@ -643,6 +763,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Volta Redonda";
+    s.city = "Volta Redonda";
+    s.state = "RJ";
+    s.region = "Southeast";
     s.attack = 38.0;
     s.defense = 40.0;
     s.midfield = 47.3;
@@ -658,6 +781,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "ABC";
+    s.city = "Natal";
+    s.state = "RN";
+    s.region = "Northeast";
     s.attack = 28.3;
     s.defense = 38.0;
     s.midfield = 22.6;
@@ -673,6 +799,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Anápolis";
+    s.city = "Anápolis";
+    s.state = "GO";
+    s.region = "Central-West";
     s.attack = 25.5;
     s.defense = 31.1;
     s.midfield = 23.2;
@@ -688,6 +817,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Botafogo-PB";
+    s.city = "João Pessoa";
+    s.state = "PB";
+    s.region = "Northeast";
     s.attack = 38.0;
     s.defense = 21.1;
     s.midfield = 37.6;
@@ -703,6 +835,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Brusque";
+    s.city = "Brusque";
+    s.state = "SC";
+    s.region = "South";
     s.attack = 29.0;
     s.defense = 34.3;
     s.midfield = 32.0;
@@ -718,6 +853,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "CSA";
+    s.city = "Maceió";
+    s.state = "AL";
+    s.region = "Northeast";
     s.attack = 37.3;
     s.defense = 29.2;
     s.midfield = 40.6;
@@ -733,6 +871,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Caxias";
+    s.city = "Caxias do Sul";
+    s.state = "RS";
+    s.region = "South";
     s.attack = 39.6;
     s.defense = 32.9;
     s.midfield = 40.3;
@@ -748,6 +889,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Confiança";
+    s.city = "Aracaju";
+    s.state = "SE";
+    s.region = "Northeast";
     s.attack = 43.6;
     s.defense = 31.9;
     s.midfield = 39.5;
@@ -763,6 +907,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Figueirense";
+    s.city = "Florianópolis";
+    s.state = "SC";
+    s.region = "South";
     s.attack = 40.1;
     s.defense = 30.7;
     s.midfield = 35.0;
@@ -778,6 +925,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Floresta";
+    s.city = "Fortaleza";
+    s.state = "CE";
+    s.region = "Northeast";
     s.attack = 30.0;
     s.defense = 45.0;
     s.midfield = 26.8;
@@ -793,6 +943,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Guarani";
+    s.city = "Campinas";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 34.6;
     s.defense = 34.3;
     s.midfield = 42.5;
@@ -808,6 +961,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Itabaiana";
+    s.city = "Itabaiana";
+    s.state = "SE";
+    s.region = "Northeast";
     s.attack = 27.1;
     s.defense = 41.1;
     s.midfield = 23.7;
@@ -823,6 +979,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Ituano";
+    s.city = "Itu";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 29.3;
     s.defense = 27.4;
     s.midfield = 28.2;
@@ -838,6 +997,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Londrina";
+    s.city = "Londrina";
+    s.state = "PR";
+    s.region = "South";
     s.attack = 36.4;
     s.defense = 38.3;
     s.midfield = 36.3;
@@ -853,6 +1015,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Maringá";
+    s.city = "Maringá";
+    s.state = "PR";
+    s.region = "South";
     s.attack = 47.8;
     s.defense = 33.8;
     s.midfield = 36.9;
@@ -868,6 +1033,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Náutico";
+    s.city = "Recife";
+    s.state = "PE";
+    s.region = "Northeast";
     s.attack = 39.7;
     s.defense = 49.8;
     s.midfield = 39.8;
@@ -883,6 +1051,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Ponte Preta";
+    s.city = "Campinas";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 38.9;
     s.defense = 38.7;
     s.midfield = 45.3;
@@ -898,6 +1069,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Retrô";
+    s.city = "Camaragibe";
+    s.state = "PE";
+    s.region = "Northeast";
     s.attack = 23.8;
     s.defense = 23.0;
     s.midfield = 27.5;
@@ -913,6 +1087,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "São Bernardo";
+    s.city = "São Bernardo do Campo";
+    s.state = "SP";
+    s.region = "Southeast";
     s.attack = 40.4;
     s.defense = 40.9;
     s.midfield = 43.8;
@@ -928,6 +1105,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Tombense";
+    s.city = "Tombos";
+    s.state = "MG";
+    s.region = "Southeast";
     s.attack = 23.8;
     s.defense = 27.2;
     s.midfield = 25.9;
@@ -943,6 +1123,9 @@ namespace footbsim::rosters::bra2025
   {
     TeamStats s;
     s.name = "Ypiranga";
+    s.city = "Erechim";
+    s.state = "RS";
+    s.region = "South";
     s.attack = 26.8;
     s.defense = 31.2;
     s.midfield = 32.5;

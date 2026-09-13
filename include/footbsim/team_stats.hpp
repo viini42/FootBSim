@@ -12,6 +12,14 @@ namespace footbsim
   {
     std::string name;
 
+    // Home location -- identity/metadata, not gameplay stats. city and
+    // state are free text (state as its 2-letter Brazilian abbreviation,
+    // e.g. "RJ"); region is one of the 5 Brazilian regions (North,
+    // Northeast, Central-West, Southeast, South).
+    std::string city;
+    std::string state;
+    std::string region;
+
     double attack = 50.0;     // 0-100: chance creation & finishing quality
     double defense = 50.0;    // 0-100: ability to resist opponent attacks
     double midfield = 50.0;   // 0-100: possession/tempo control

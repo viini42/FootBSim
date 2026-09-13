@@ -142,6 +142,9 @@ namespace footbsim::utils
 
       TeamStats s;
       s.name = teams[i].name;
+      s.city = teams[i].city;
+      s.state = teams[i].state;
+      s.region = teams[i].region;
       s.attack = std::clamp(attack_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
       s.defense = std::clamp(defense_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
       s.midfield = std::clamp(midfield_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
