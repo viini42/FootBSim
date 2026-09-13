@@ -1,5 +1,6 @@
 #pragma once
 
+#include "footbsim/team_stats.hpp"
 #include "footbsim/tuning.hpp"
 
 namespace footbsim
@@ -43,9 +44,8 @@ namespace footbsim
   };
 
   // How far the away side traveled to play, from a same-city derby to a
-  // different country entirely. Not tied to real team geography yet --
-  // callers pick a level directly. TravelFatiguePenalty() does the
-  // level -> number conversion. Kept deliberately subtle: see tuning.hpp.
+  // different country entirely. TravelFatiguePenalty() does the level ->
+  // number conversion. Kept deliberately subtle: see tuning.hpp.
   enum class TravelFatigueLevel
   {
     SAME_CITY,
@@ -58,12 +58,18 @@ namespace footbsim
   // TeamStats since these describe the match, not the team.
   struct MatchContext
   {
+    // Derives travel_fatigue from home/away's city/state/region (see
+    // DetermineTravelFatigue() in match_context.cpp); every other field
+    // keeps its neutral default below. Overwrite fields afterward for a
+    // non-default match (e.g. context.stakes = Stakes::FINAL).
+    MatchContext(const TeamStats& home, const TeamStats& away);
+
     HomeAdvantageLevel home_advantage = HomeAdvantageLevel::MODERATE;
     Weather weather = Weather::CLEAR;
     double weather_severity = 0.0; // 0..1, scales weather's accuracy penalty
     RefereeStyle referee_strictness = RefereeStyle::BALANCED;
     Stakes stakes = Stakes::NORMAL;
-    TravelFatigueLevel travel_fatigue = TravelFatigueLevel::SAME_CITY;
+    TravelFatigueLevel travel_fatigue;
   };
 
   // Multiplier on the home team's effective attack/midfield for the given level.

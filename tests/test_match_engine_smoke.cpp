@@ -32,7 +32,7 @@ TEST_CASE("seeded match completes and produces a sane scoreline", "[engine][smok
 {
   const TeamStats home = MakeTeam("Home FC");
   const TeamStats away = MakeTeam("Away FC");
-  MatchContext context;
+  MatchContext context(home, away);
 
   MatchEngine engine(home, away, context, /*seed=*/42);
   const MatchResult result = engine.Simulate();
@@ -54,7 +54,7 @@ TEST_CASE("same seed produces identical results", "[engine][smoke]")
 {
   const TeamStats home = MakeTeam("Home FC");
   const TeamStats away = MakeTeam("Away FC");
-  MatchContext context;
+  MatchContext context(home, away);
 
   MatchEngine engine_a(home, away, context, /*seed=*/1234);
   MatchEngine engine_b(home, away, context, /*seed=*/1234);
@@ -79,7 +79,7 @@ TEST_CASE("much stronger team wins more often across several seeds", "[engine][s
   weak.defense = 30;
   weak.midfield = 32;
 
-  MatchContext context;
+  MatchContext context(strong, weak);
 
   int strong_wins = 0;
   constexpr int TRIALS = 25;
@@ -104,7 +104,7 @@ TEST_CASE("more aggressive team takes more shots on average", "[engine][smoke][a
   TeamStats defensive = MakeTeam("Defensive FC");
   defensive.aggression = 10;
 
-  MatchContext context;
+  MatchContext context(attacking, defensive);
 
   int attacking_shots = 0;
   int defensive_shots = 0;
