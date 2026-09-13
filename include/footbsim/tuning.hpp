@@ -157,6 +157,39 @@ namespace footbsim::tuning
   constexpr double TRAVEL_FATIGUE_DIFFERENT_REGION = 5.0;  // longer domestic trip
   constexpr double TRAVEL_FATIGUE_DIFFERENT_COUNTRY = 8.0; // international travel
 
+  // ---- Team tactical settings (TeamConfig) --------------------------------
+  // Per-match coach choices layered on top of TeamStats: new inputs fed
+  // into the same already-tuned curves above (aggression, stamina decay,
+  // foul rate, zone advancement), not new formulas or retuned baselines.
+
+  // Formation's aggression offset (see FormationAggressionOffset):
+  // FOUR_FOUR_TWO is neutral/default. This pairing of formation names to
+  // attacking/defensive intent is illustrative, not a real-football claim.
+  constexpr double FORMATION_FIVE_THREE_TWO_OFFSET = -15.0;
+  constexpr double FORMATION_FOUR_FOUR_TWO_OFFSET = 0.0;
+  constexpr double FORMATION_THREE_FIVE_TWO_OFFSET = 8.0;
+  constexpr double FORMATION_FOUR_THREE_THREE_OFFSET = 15.0;
+
+  // Press intensity: stamina cost for the pressing team (same scale as the
+  // travel fatigue penalties above) and a multiplier on their foul rate.
+  // MEDIUM is neutral/default, so it must cost nothing extra -- a team that
+  // never touches this dial has to get exactly the old (pre-TeamConfig)
+  // stamina decay; LOW_BLOCK conserves energy relative to that baseline,
+  // HIGH_PRESS spends more.
+  constexpr double PRESS_INTENSITY_LOW_BLOCK_STAMINA_COST = -2.0;
+  constexpr double PRESS_INTENSITY_MEDIUM_STAMINA_COST = 0.0;
+  constexpr double PRESS_INTENSITY_HIGH_PRESS_STAMINA_COST = 3.0;
+  constexpr double PRESS_INTENSITY_LOW_BLOCK_FOUL_MULTIPLIER = 0.90;
+  constexpr double PRESS_INTENSITY_MEDIUM_FOUL_MULTIPLIER = 1.00;
+  constexpr double PRESS_INTENSITY_HIGH_PRESS_FOUL_MULTIPLIER = 1.15;
+
+  // Tempo: multiplier on ZONE_ADVANCE_FRACTION, how much of a won midfield
+  // duel pushes forward immediately versus recycling possession patiently.
+  // BALANCED is neutral/default.
+  constexpr double TEMPO_PATIENT_ADVANCE_MULTIPLIER = 0.90;
+  constexpr double TEMPO_BALANCED_ADVANCE_MULTIPLIER = 1.00;
+  constexpr double TEMPO_DIRECT_ADVANCE_MULTIPLIER = 1.02;
+
   // ---- External influences (MatchContext defaults) -----------------------
   // Neutral/realistic defaults for match-level context; callers override
   // per match as needed.

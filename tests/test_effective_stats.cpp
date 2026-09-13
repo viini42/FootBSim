@@ -1,8 +1,10 @@
 #include "footbsim/match_engine.hpp"
+#include "footbsim/team_config.hpp"
 #include "footbsim/team_stats.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
+using footbsim::TeamConfig;
 using footbsim::TeamStats;
 
 TEST_CASE("higher attack stat yields higher effective attack", "[effective_stats]")
@@ -102,4 +104,25 @@ TEST_CASE("aggression pressure factor increases with aggression", "[aggression]"
   CHECK(footbsim::AggressionPressureFactor(50.0) == 1.0);
   CHECK(footbsim::AggressionPressureFactor(100.0) > footbsim::AggressionPressureFactor(50.0));
   CHECK(footbsim::AggressionPressureFactor(0.0) < footbsim::AggressionPressureFactor(50.0));
+}
+
+TEST_CASE("EffectiveAggression applies the formation offset and clamps to [0,100]",
+          "[effective_stats][formation]")
+{
+  TeamStats stats;
+  stats.aggression = 50.0;
+
+  const TeamConfig balanced{ .stats = stats, .formation = footbsim::Formation::FOUR_FOUR_TWO };
+  const TeamConfig attacking{ .stats = stats, .formation = footbsim::Formation::FOUR_THREE_THREE };
+  const TeamConfig defensive{ .stats = stats, .formation = footbsim::Formation::FIVE_THREE_TWO };
+
+  CHECK(footbsim::EffectiveAggression(balanced) == 50.0);
+  CHECK(footbsim::EffectiveAggression(attacking) > 50.0);
+  CHECK(footbsim::EffectiveAggression(defensive) < 50.0);
+
+  TeamStats extreme;
+  extreme.aggression = 95.0;
+  const TeamConfig extreme_attacking{ .stats = extreme,
+                                      .formation = footbsim::Formation::FOUR_THREE_THREE };
+  CHECK(footbsim::EffectiveAggression(extreme_attacking) == 100.0); // clamped, not 110
 }

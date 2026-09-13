@@ -4,6 +4,7 @@
 #include "footbsim/match_state.hpp"
 #include "footbsim/pitch_zone.hpp"
 #include "footbsim/rng.hpp"
+#include "footbsim/team_config.hpp"
 #include "footbsim/team_stats.hpp"
 #include "footbsim/tuning.hpp"
 
@@ -49,6 +50,11 @@ namespace footbsim
   // eagerness and a defending team's foul rate when they play aggressively.
   double AggressionPressureFactor(double aggression);
 
+  // TeamStats::aggression shifted by the team's chosen Formation for this
+  // match (see Formation's doc comment), clamped back to [0,100] before
+  // feeding into AggressionAttackFactor/DefenseFactor/PressureFactor.
+  double EffectiveAggression(const TeamConfig& team);
+
   double Sigmoid(double x);
 
   // Probability that "attacker" wins a duel against "defender" -- used for
@@ -67,8 +73,8 @@ namespace footbsim
   class MatchEngine
   {
   public:
-    MatchEngine(TeamStats home,
-                TeamStats away,
+    MatchEngine(TeamConfig home,
+                TeamConfig away,
                 MatchContext context,
                 std::optional<std::uint64_t> seed = std::nullopt);
 
@@ -97,8 +103,8 @@ namespace footbsim
                               int minute,
                               MatchResult& result);
 
-    TeamStats m_home;
-    TeamStats m_away;
+    TeamConfig m_home;
+    TeamConfig m_away;
     MatchContext m_context;
     Rng m_rng;
   };

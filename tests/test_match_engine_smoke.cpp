@@ -1,13 +1,17 @@
 #include "footbsim/match_context.hpp"
 #include "footbsim/match_engine.hpp"
-#include "footbsim/team_stats.hpp"
+#include "footbsim/team_config.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
+using footbsim::Formation;
 using footbsim::MatchContext;
 using footbsim::MatchEngine;
 using footbsim::MatchResult;
+using footbsim::PressIntensity;
+using footbsim::TeamConfig;
 using footbsim::TeamStats;
+using footbsim::Tempo;
 
 namespace
 {
@@ -26,6 +30,11 @@ namespace
     return s;
   }
 
+  TeamConfig MakeConfig(TeamStats stats)
+  {
+    return TeamConfig{ .stats = std::move(stats) };
+  }
+
 } // namespace
 
 TEST_CASE("seeded match completes and produces a sane scoreline", "[engine][smoke]")
@@ -34,7 +43,7 @@ TEST_CASE("seeded match completes and produces a sane scoreline", "[engine][smok
   const TeamStats away = MakeTeam("Away FC");
   MatchContext context{ home, away };
 
-  MatchEngine engine{ home, away, context, /*seed=*/42 };
+  MatchEngine engine{ MakeConfig(home), MakeConfig(away), context, /*seed=*/42 };
   const MatchResult result = engine.Simulate();
 
   CHECK_FALSE(result.log.empty());
@@ -56,8 +65,8 @@ TEST_CASE("same seed produces identical results", "[engine][smoke]")
   const TeamStats away = MakeTeam("Away FC");
   MatchContext context{ home, away };
 
-  MatchEngine engine_a{ home, away, context, /*seed=*/1234 };
-  MatchEngine engine_b{ home, away, context, /*seed=*/1234 };
+  MatchEngine engine_a{ MakeConfig(home), MakeConfig(away), context, /*seed=*/1234 };
+  MatchEngine engine_b{ MakeConfig(home), MakeConfig(away), context, /*seed=*/1234 };
 
   const MatchResult a = engine_a.Simulate();
   const MatchResult b = engine_b.Simulate();
@@ -85,7 +94,7 @@ TEST_CASE("much stronger team wins more often across several seeds", "[engine][s
   constexpr int TRIALS = 25;
   for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
   {
-    MatchEngine engine{ strong, weak, context, seed };
+    MatchEngine engine{ MakeConfig(strong), MakeConfig(weak), context, seed };
     const MatchResult result = engine.Simulate();
     if (result.home_goals > result.away_goals)
     {
@@ -111,11 +120,86 @@ TEST_CASE("more aggressive team takes more shots on average", "[engine][smoke][a
   constexpr int TRIALS = 25;
   for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
   {
-    MatchEngine engine{ attacking, defensive, context, seed };
+    MatchEngine engine{ MakeConfig(attacking), MakeConfig(defensive), context, seed };
     const MatchResult result = engine.Simulate();
     attacking_shots += result.home_state.shots;
     defensive_shots += result.away_state.shots;
   }
 
   CHECK(attacking_shots > defensive_shots);
+}
+
+TEST_CASE("attacking formation takes more shots than defensive formation, other things equal",
+          "[engine][smoke][formation]")
+{
+  const TeamStats base = MakeTeam("Team");
+  MatchContext context{ base, base };
+
+  int attacking_formation_shots = 0;
+  int defensive_formation_shots = 0;
+  constexpr int TRIALS = 25;
+  for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
+  {
+    TeamConfig attacking = MakeConfig(base);
+    attacking.formation = Formation::FOUR_THREE_THREE;
+    TeamConfig defensive = MakeConfig(base);
+    defensive.formation = Formation::FIVE_THREE_TWO;
+
+    MatchEngine engine{ attacking, defensive, context, seed };
+    const MatchResult result = engine.Simulate();
+    attacking_formation_shots += result.home_state.shots;
+    defensive_formation_shots += result.away_state.shots;
+  }
+
+  CHECK(attacking_formation_shots > defensive_formation_shots);
+}
+
+TEST_CASE("high press commits more fouls than low block, other things equal",
+          "[engine][smoke][press_intensity]")
+{
+  const TeamStats base = MakeTeam("Team");
+  MatchContext context{ base, base };
+
+  int high_press_fouls = 0;
+  int low_block_fouls = 0;
+  constexpr int TRIALS = 25;
+  for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
+  {
+    TeamConfig high_press = MakeConfig(base);
+    high_press.press_intensity = PressIntensity::HIGH_PRESS;
+    TeamConfig low_block = MakeConfig(base);
+    low_block.press_intensity = PressIntensity::LOW_BLOCK;
+
+    MatchEngine engine{ high_press, low_block, context, seed };
+    const MatchResult result = engine.Simulate();
+    high_press_fouls += result.home_state.fouls;
+    low_block_fouls += result.away_state.fouls;
+  }
+
+  CHECK(high_press_fouls > low_block_fouls);
+}
+
+TEST_CASE("direct tempo takes more shots than patient tempo, other things equal",
+          "[engine][smoke][tempo]")
+{
+  const TeamStats base = MakeTeam("Team");
+  MatchContext context{ base, base };
+
+  int direct_shots = 0;
+  int patient_shots = 0;
+  constexpr int TRIALS = 25;
+  for (std::uint64_t seed = 0; seed < TRIALS; ++seed)
+  {
+    TeamConfig direct = MakeConfig(base);
+    direct.tempo = Tempo::DIRECT;
+    TeamConfig patient = MakeConfig(base);
+    patient.tempo = Tempo::PATIENT;
+
+    MatchEngine engine{ direct, patient, context, seed };
+    const MatchResult result = engine.Simulate();
+    direct_shots += result.home_state.shots;
+    patient_shots += result.away_state.shots;
+  }
+
+  CHECK(direct_shots > patient_shots);
 }

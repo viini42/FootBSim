@@ -3,6 +3,7 @@ add_library(footbsim_core STATIC
     match_state.cpp
     rng.cpp
     match_engine.cpp
+    team_config.cpp
     utils/team_stats_deriver.cpp
 )
 
