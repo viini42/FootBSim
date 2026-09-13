@@ -246,10 +246,70 @@ namespace
     return identifier;
   }
 
+  enum class OutputFormat
+  {
+    CPP,
+    CSV,
+  };
+
+  OutputFormat ParseOutputFormat(const std::string& value)
+  {
+    if (value == "cpp")
+    {
+      return OutputFormat::CPP;
+    }
+    if (value == "csv")
+    {
+      return OutputFormat::CSV;
+    }
+    throw std::runtime_error("unknown output format '" + value + "' (expected cpp or csv)");
+  }
+
+  void PrintCppRoster(const std::vector<TeamStats>& derived)
+  {
+    std::cout << "// Paste into a roster header:\n\n";
+    for (const TeamStats& stat : derived)
+    {
+      std::cout << "  inline TeamStats " << MakeIdentifier(stat.name) << "()\n";
+      std::cout << "  {\n";
+      std::cout << "    TeamStats s;\n";
+      std::cout << "    s.name = \"" << stat.name << "\";\n";
+      std::cout << std::fixed << std::setprecision(1);
+      std::cout << "    s.attack = " << stat.attack << ";\n";
+      std::cout << "    s.defense = " << stat.defense << ";\n";
+      std::cout << "    s.midfield = " << stat.midfield << ";\n";
+      std::cout << "    s.discipline = " << stat.discipline << ";\n";
+      std::cout << "    s.aggression = " << stat.aggression << ";\n";
+      std::cout << "    s.form = " << stat.form << ";\n";
+      std::cout << "    s.stamina = " << stat.stamina << ";\n";
+      std::cout << "    s.morale = " << stat.morale << ";\n";
+      std::cout << "    return s;\n";
+      std::cout << "  }\n\n";
+    }
+  }
+
+  void PrintCsvRoster(const std::vector<TeamStats>& derived)
+  {
+    std::cout << "name,attack,defense,midfield,discipline,aggression,form,stamina,morale\n";
+    std::cout << std::fixed << std::setprecision(1);
+    for (const TeamStats& stat : derived)
+    {
+      std::cout << stat.name << ',' << stat.attack << ',' << stat.defense << ',' << stat.midfield
+                << ',' << stat.discipline << ',' << stat.aggression << ',' << stat.form << ','
+                << stat.stamina << ',' << stat.morale << '\n';
+    }
+  }
+
   void PrintUsage()
   {
-    std::cerr << "usage: footbsim_team_stats_tool <input.csv>\n\n"
-              << "CSV columns (one header row, then one row per team):\n"
+    std::cerr << "usage: footbsim_team_stats_tool <input.csv> [output_format]\n\n"
+              << "output_format is 'cpp' (default) or 'csv' -- selects how the\n"
+              << "derived roster is printed: 'cpp' pastes TeamStats factory\n"
+              << "functions ready for a roster header, 'csv' prints\n"
+              << "name,attack,defense,midfield,discipline,aggression,form,stamina,\n"
+              << "morale rows ready to feed back into another tool or load at\n"
+              << "runtime.\n\n"
+              << "CSV columns of the INPUT file (one header row, then one row per team):\n"
               << "  name,matches,wins,draws,losses,goals_for,goals_against,shots,\n"
               << "  shots_on_target,shots_against,shots_on_target_against,\n"
               << "  possession_pct,pass_accuracy_pct,fouls,corners,yellow_cards,\n"
@@ -304,37 +364,46 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  OutputFormat format = OutputFormat::CPP;
+  try
+  {
+    if (argc >= 3)
+    {
+      format = ParseOutputFormat(argv[2]);
+    }
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "error: " << e.what() << "\n";
+    return 1;
+  }
+
   const std::vector<TeamStats> derived = DeriveByDivision(rows);
 
-  std::cout << std::left << std::setw(20) << "Team" << std::right << std::setw(6) << "ATT"
+  // The human-readable summary always goes to stderr, not stdout, so
+  // stdout stays clean for whichever export format was requested (e.g.
+  // `footbsim_team_stats_tool in.csv csv > roster.csv` should produce a
+  // valid CSV file, not that file with a table pasted above it).
+  std::cerr << std::left << std::setw(20) << "Team" << std::right << std::setw(6) << "ATT"
             << std::setw(6) << "DEF" << std::setw(6) << "MID" << std::setw(6) << "DISC"
             << std::setw(6) << "AGG" << "\n";
   for (const TeamStats& stat : derived)
   {
-    std::cout << std::left << std::setw(20) << stat.name << std::right << std::fixed
+    std::cerr << std::left << std::setw(20) << stat.name << std::right << std::fixed
               << std::setprecision(1) << std::setw(6) << stat.attack << std::setw(6) << stat.defense
               << std::setw(6) << stat.midfield << std::setw(6) << stat.discipline << std::setw(6)
               << stat.aggression << "\n";
   }
+  std::cerr << "\n";
 
-  std::cout << "\n// Paste into a roster header:\n\n";
-  for (const TeamStats& stat : derived)
+  switch (format)
   {
-    std::cout << "  inline TeamStats " << MakeIdentifier(stat.name) << "()\n";
-    std::cout << "  {\n";
-    std::cout << "    TeamStats s;\n";
-    std::cout << "    s.name = \"" << stat.name << "\";\n";
-    std::cout << std::fixed << std::setprecision(1);
-    std::cout << "    s.attack = " << stat.attack << ";\n";
-    std::cout << "    s.defense = " << stat.defense << ";\n";
-    std::cout << "    s.midfield = " << stat.midfield << ";\n";
-    std::cout << "    s.discipline = " << stat.discipline << ";\n";
-    std::cout << "    s.aggression = " << stat.aggression << ";\n";
-    std::cout << "    s.form = " << stat.form << ";\n";
-    std::cout << "    s.stamina = " << stat.stamina << ";\n";
-    std::cout << "    s.morale = " << stat.morale << ";\n";
-    std::cout << "    return s;\n";
-    std::cout << "  }\n\n";
+  case OutputFormat::CPP:
+    PrintCppRoster(derived);
+    break;
+  case OutputFormat::CSV:
+    PrintCsvRoster(derived);
+    break;
   }
 
   return 0;
