@@ -141,15 +141,18 @@ namespace footbsim::tuning
   // ---- Travel fatigue levels --------------------------------------------
   // Stamina penalty (subtracted from base stamina before the decay curve
   // above) for the away side, keyed to how far they traveled to play.
-  // Escalates same city < different state < different region < different
-  // country -- a region spans multiple states, so crossing into a
-  // different region is a bigger trip than a neighboring state in the
-  // same region. Not yet wired to real team geography (see
-  // MatchContext::travel_fatigue); callers pick a level directly for now.
+  // Escalates same city < different city < different state < different
+  // region < different country -- a region spans multiple states, so
+  // crossing into a different region is a bigger trip than a neighboring
+  // state in the same region. Derived from the two teams' real
+  // city/state/region (see MatchContext::MatchContext(home, away) in
+  // match_context.cpp); DIFFERENT_COUNTRY needs a country field this data
+  // doesn't have, so it stays available only for a caller to set by hand.
   // Deliberately small across the board: this is meant as a light nudge
   // on top of the match, not a dominant factor, so even DIFFERENT_COUNTRY
   // stays well under half of STAMINA_DECAY's own effect range.
   constexpr double TRAVEL_FATIGUE_SAME_CITY = 0.0;         // no penalty (default)
+  constexpr double TRAVEL_FATIGUE_DIFFERENT_CITY = 1.0;    // same state, different city
   constexpr double TRAVEL_FATIGUE_DIFFERENT_STATE = 2.0;   // short domestic trip
   constexpr double TRAVEL_FATIGUE_DIFFERENT_REGION = 5.0;  // longer domestic trip
   constexpr double TRAVEL_FATIGUE_DIFFERENT_COUNTRY = 8.0; // international travel

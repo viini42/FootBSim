@@ -11,18 +11,20 @@ namespace footbsim
   {
 
     // Buckets a home/away pair into a TravelFatigueLevel from their
-    // city/state/region. There are 4 nested possible outcomes (same city
-    // implies same state implies same region) but only 3 domestically
-    // reachable levels (DIFFERENT_COUNTRY needs a country field this data
-    // doesn't have, so it stays available only for a caller to set by
-    // hand). A same-state-but-different-city trip has no dedicated level:
-    // it's bucketed with SAME_CITY, since it's a much shorter trip than
-    // crossing into another state and there's nowhere else for it to go.
+    // city/state/region: same city implies same state implies same
+    // region, so checking city, then state, then region in order covers
+    // every domestically reachable level. DIFFERENT_COUNTRY needs a
+    // country field this data doesn't have, so it stays available only
+    // for a caller to set by hand.
     TravelFatigueLevel DetermineTravelFatigue(const TeamStats& home, const TeamStats& away)
     {
-      if (home.state == away.state)
+      if (home.city == away.city)
       {
         return TravelFatigueLevel::SAME_CITY;
+      }
+      if (home.state == away.state)
+      {
+        return TravelFatigueLevel::DIFFERENT_CITY;
       }
       if (home.region == away.region)
       {
@@ -78,6 +80,8 @@ namespace footbsim
     {
     case TravelFatigueLevel::SAME_CITY:
       return tuning::TRAVEL_FATIGUE_SAME_CITY;
+    case TravelFatigueLevel::DIFFERENT_CITY:
+      return tuning::TRAVEL_FATIGUE_DIFFERENT_CITY;
     case TravelFatigueLevel::DIFFERENT_REGION:
       return tuning::TRAVEL_FATIGUE_DIFFERENT_REGION;
     case TravelFatigueLevel::DIFFERENT_STATE:

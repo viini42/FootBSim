@@ -68,13 +68,16 @@ TEST_CASE("travel fatigue penalty increases with distance", "[match_context][tra
 {
   // A different state (a neighboring state, same region) is a shorter trip
   // than a different region (which spans multiple states), so the penalty
-  // ordering is state < region here, not alphabetical/declaration order.
+  // ordering is city < state < region here, not alphabetical/declaration
+  // order.
   const double same_city = footbsim::TravelFatiguePenalty(TravelFatigueLevel::SAME_CITY);
+  const double city = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_CITY);
   const double state = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_STATE);
   const double region = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_REGION);
   const double country = footbsim::TravelFatiguePenalty(TravelFatigueLevel::DIFFERENT_COUNTRY);
 
-  CHECK(same_city < state);
+  CHECK(same_city < city);
+  CHECK(city < state);
   CHECK(state < region);
   CHECK(region < country);
 }
@@ -98,15 +101,13 @@ TEST_CASE("MatchContext derives SAME_CITY for a same-city derby",
   CHECK(context.travel_fatigue == TravelFatigueLevel::SAME_CITY);
 }
 
-TEST_CASE("MatchContext derives SAME_CITY for a same-state different-city trip",
+TEST_CASE("MatchContext derives DIFFERENT_CITY for a same-state different-city trip",
           "[match_context][travel_fatigue]")
 {
-  // No dedicated level exists between a same-city derby and crossing into
-  // another state, so a shorter intrastate trip is bucketed with SAME_CITY.
   const TeamStats home = MakeLocatedTeam("São Paulo", "SP", "Southeast");
   const TeamStats away = MakeLocatedTeam("Santos", "SP", "Southeast");
   const MatchContext context(home, away);
-  CHECK(context.travel_fatigue == TravelFatigueLevel::SAME_CITY);
+  CHECK(context.travel_fatigue == TravelFatigueLevel::DIFFERENT_CITY);
 }
 
 TEST_CASE("MatchContext derives DIFFERENT_STATE for a same-region different-state trip",

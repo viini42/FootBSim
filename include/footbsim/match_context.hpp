@@ -49,6 +49,7 @@ namespace footbsim
   enum class TravelFatigueLevel
   {
     SAME_CITY,
+    DIFFERENT_CITY,
     DIFFERENT_STATE,
     DIFFERENT_REGION,
     DIFFERENT_COUNTRY
