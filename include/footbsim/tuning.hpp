@@ -190,6 +190,24 @@ namespace footbsim::tuning
   constexpr double TEMPO_BALANCED_ADVANCE_MULTIPLIER = 1.00;
   constexpr double TEMPO_DIRECT_ADVANCE_MULTIPLIER = 1.02;
 
+  // ---- Post-match stats update -------------------------------------------
+  // How a finished match moves a team's dynamic stats (see
+  // ApplyMatchResult in post_match.hpp). Form and morale are exponential
+  // moving averages: each result pulls the stat a fixed fraction of the way
+  // toward that result's target, so a streak converges on the target
+  // without ever overshooting and old results fade out on their own. Only
+  // form and morale change -- attack/defense/midfield/discipline/aggression
+  // are season-derived quality/style measures, and stamina is matchday
+  // fitness with no rest-days model yet to recover it against.
+  constexpr double FORM_TARGET_WIN = 10.0;   // top of the -10..+10 form range
+  constexpr double FORM_TARGET_DRAW = 0.0;   // neutral
+  constexpr double FORM_TARGET_LOSS = -10.0; // bottom of the range
+  constexpr double FORM_UPDATE_RATE = 0.25;  // ~4 results to mostly reflect a new run
+  constexpr double MORALE_TARGET_WIN = 75.0;
+  constexpr double MORALE_TARGET_DRAW = 50.0;
+  constexpr double MORALE_TARGET_LOSS = 25.0;
+  constexpr double MORALE_UPDATE_RATE = 0.15; // slower than form: morale is steadier
+
   // ---- External influences (MatchContext defaults) -----------------------
   // Neutral/realistic defaults for match-level context; callers override
   // per match as needed.
