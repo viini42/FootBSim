@@ -189,4 +189,47 @@ namespace footbsim::messages
     return "Cartões vermelhos";
   }
 
+  // ---- Championship standings table --------------------------------------
+
+  inline std::string PositionLabel()
+  {
+    return "#";
+  }
+  inline std::string TeamLabel()
+  {
+    return "Time";
+  }
+  inline std::string PointsLabel()
+  {
+    return "P";
+  }
+  inline std::string PlayedLabel()
+  {
+    return "J";
+  }
+  inline std::string WinsLabel()
+  {
+    return "V";
+  }
+  inline std::string DrawsLabel()
+  {
+    return "E";
+  }
+  inline std::string LossesLabel()
+  {
+    return "D";
+  }
+  inline std::string GoalsForLabel()
+  {
+    return "GP";
+  }
+  inline std::string GoalsAgainstLabel()
+  {
+    return "GC";
+  }
+  inline std::string GoalDifferenceLabel()
+  {
+    return "SG";
+  }
+
 } // namespace footbsim::messages
