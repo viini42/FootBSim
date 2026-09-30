@@ -7,10 +7,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(footbsim_tests
+    test_championship.cpp
     test_effective_stats.cpp
     test_event_probabilities.cpp
     test_match_context.cpp
     test_match_engine_smoke.cpp
+    test_post_match.cpp
     test_team_config.cpp
     test_team_stats_deriver.cpp
 )
