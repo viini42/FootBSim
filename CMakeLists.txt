@@ -10,7 +10,6 @@ include(cmake/CompilerWarnings.cmake)
 option(FOOTBSIM_BUILD_TESTS "Build FootbSim unit tests" ON)
 
 add_subdirectory(src)
-add_subdirectory(apps/cli)
 add_subdirectory(apps/team_stats_tool)
 
 if(FOOTBSIM_BUILD_TESTS)

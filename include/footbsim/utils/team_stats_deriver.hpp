@@ -50,7 +50,7 @@ namespace footbsim::utils
   // Derives TeamStats::attack/defense/midfield/discipline/aggression for
   // every team in `teams`. This is the same methodology validated against
   // the full 2025 Campeonato Brasileiro season log -- see the writeup at
-  // the top of apps/cli/brasileirao_2025.hpp for the reasoning and the
+  // docs/team_stats_derivation.md for the reasoning and the
   // prediction-accuracy numbers it was checked against.
   //
   // Every stat is z-scored *across the teams passed in* (50 + 8 standard
@@ -79,6 +79,6 @@ namespace footbsim::utils
   // discipline and aggression are style, not competitive strength, so
   // they're unaffected by the offset.
   std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
-                                          double league_strength_offset = 0.0);
+                                         double league_strength_offset = 0.0);
 
 } // namespace footbsim::utils

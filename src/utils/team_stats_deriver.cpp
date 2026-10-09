@@ -10,7 +10,7 @@ namespace footbsim::utils
   {
 
     // ---- Derivation weights ---------------------------------------------
-    // See team_stats_deriver.hpp and apps/cli/brasileirao_2025.hpp for the
+    // See team_stats_deriver.hpp and docs/team_stats_derivation.md for the
     // methodology writeup and the real-season validation these were tuned
     // against (44.7% -> 48.2% match-result prediction accuracy over all
     // 380 real 2025 Brasileirão fixtures).
@@ -82,7 +82,7 @@ namespace footbsim::utils
   } // namespace
 
   std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
-                                          double league_strength_offset)
+                                         double league_strength_offset)
   {
     const std::size_t n = teams.size();
 
