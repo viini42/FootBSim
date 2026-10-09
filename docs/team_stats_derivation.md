@@ -1,6 +1,6 @@
 # Team stats derivation
 
-How `DeriveTeamStats` (`include/footbsim/utils/team_stats_deriver.hpp`) turns
+How `DeriveTeamStats` (`data/team_stats_deriver.hpp`) turns
 season totals into TeamStats. The method was validated against the full
 380-match log of the 2025 Campeonato Brasileiro Série A (per-match shots, shots
 on target, possession, pass accuracy, fouls, corners, cards and results).

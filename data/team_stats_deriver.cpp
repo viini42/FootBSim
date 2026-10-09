@@ -1,16 +1,16 @@
-#include "footbsim/utils/team_stats_deriver.hpp"
+#include "team_stats_deriver.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace footbsim::utils
+namespace team_stats_tool
 {
 
   namespace
   {
 
     // ---- Derivation weights ---------------------------------------------
-    // See team_stats_deriver.hpp and docs/team_stats_derivation.md for the
+    // See team_stats_deriver.hpp and ../docs/team_stats_derivation.md for the
     // methodology writeup and the real-season validation these were tuned
     // against (44.7% -> 48.2% match-result prediction accuracy over all
     // 380 real 2025 Brasileirão fixtures).
@@ -81,8 +81,8 @@ namespace footbsim::utils
 
   } // namespace
 
-  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
-                                         double league_strength_offset)
+  std::vector<DerivedTeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
+                                                double league_strength_offset)
   {
     const std::size_t n = teams.size();
 
@@ -129,7 +129,7 @@ namespace footbsim::utils
     const std::vector<double> aggression = ZScoreTo100(aggression_raw);
     const std::vector<double> results = ZScoreTo100(results_raw);
 
-    std::vector<TeamStats> out;
+    std::vector<DerivedTeamStats> out;
     out.reserve(n);
     for (std::size_t i = 0; i < n; ++i)
     {
@@ -140,7 +140,7 @@ namespace footbsim::utils
       const double midfield_blend =
         (1.0 - RESULTS_BLEND_WEIGHT) * midfield_process[i] + RESULTS_BLEND_WEIGHT * results[i];
 
-      TeamStats s;
+      DerivedTeamStats s;
       s.name = teams[i].name;
       s.city = teams[i].city;
       s.state = teams[i].state;
@@ -150,10 +150,10 @@ namespace footbsim::utils
       s.midfield = std::clamp(midfield_blend + league_strength_offset, ZSCORE_MIN, ZSCORE_MAX);
       s.discipline = discipline[i];
       s.aggression = aggression[i];
-      // form, stamina, morale left at TeamStats' neutral defaults.
+      // form, stamina, morale left at DerivedTeamStats' neutral defaults.
       out.push_back(s);
     }
     return out;
   }
 
-} // namespace footbsim::utils
+} // namespace team_stats_tool

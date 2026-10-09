@@ -6,7 +6,6 @@ add_library(footbsim_core STATIC
     match_engine.cpp
     post_match.cpp
     team_config.cpp
-    utils/team_stats_deriver.cpp
 )
 
 target_include_directories(footbsim_core PUBLIC ${CMAKE_SOURCE_DIR}/include)

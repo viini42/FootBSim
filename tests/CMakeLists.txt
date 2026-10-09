@@ -14,7 +14,6 @@ add_executable(footbsim_tests
     test_match_engine_smoke.cpp
     test_post_match.cpp
     test_team_config.cpp
-    test_team_stats_deriver.cpp
 )
 
 target_link_libraries(footbsim_tests PRIVATE footbsim_core Catch2::Catch2WithMain)

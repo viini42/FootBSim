@@ -1,10 +1,10 @@
-#include "footbsim/utils/team_stats_deriver.hpp"
+#include "team_stats_deriver.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-using footbsim::TeamStats;
-using footbsim::utils::DeriveTeamStats;
-using footbsim::utils::TeamRawStats;
+using team_stats_tool::DerivedTeamStats;
+using team_stats_tool::DeriveTeamStats;
+using team_stats_tool::TeamRawStats;
 
 namespace
 {
@@ -37,7 +37,7 @@ namespace
 TEST_CASE("a single team on its own comes back exactly average", "[team_stats_deriver]")
 {
   const std::vector<TeamRawStats> teams = { MakeRaw("Solo FC") };
-  const std::vector<TeamStats> derived = DeriveTeamStats(teams);
+  const std::vector<DerivedTeamStats> derived = DeriveTeamStats(teams);
 
   REQUIRE(derived.size() == 1);
   CHECK(derived[0].name == "Solo FC");
@@ -65,7 +65,7 @@ TEST_CASE("a team with better attacking output and results scores higher on atta
   weak.draws = 5;
   weak.losses = 28;
 
-  const std::vector<TeamStats> derived = DeriveTeamStats({ strong, weak });
+  const std::vector<DerivedTeamStats> derived = DeriveTeamStats({ strong, weak });
 
   REQUIRE(derived.size() == 2);
   CHECK(derived[0].attack > derived[1].attack);
@@ -82,7 +82,7 @@ TEST_CASE("a team that concedes far more shots on target scores lower on defense
   leaky.shots_on_target_against = 220;
   leaky.goals_against = 70;
 
-  const std::vector<TeamStats> derived = DeriveTeamStats({ solid, leaky });
+  const std::vector<DerivedTeamStats> derived = DeriveTeamStats({ solid, leaky });
 
   REQUIRE(derived.size() == 2);
   CHECK(derived[0].defense > derived[1].defense);
@@ -101,7 +101,7 @@ TEST_CASE("a team with more cards and fouls per game scores lower on discipline"
   dirty.red_cards = 8;
   dirty.fouls = 550;
 
-  const std::vector<TeamStats> derived = DeriveTeamStats({ clean, dirty });
+  const std::vector<DerivedTeamStats> derived = DeriveTeamStats({ clean, dirty });
 
   REQUIRE(derived.size() == 2);
   CHECK(derived[0].discipline > derived[1].discipline);
@@ -128,9 +128,9 @@ TEST_CASE("derived stats stay within the [5,95] band even for extreme inputs",
   hopeless.shots_on_target_against = 400;
   hopeless.goals_against = 150;
 
-  const std::vector<TeamStats> derived = DeriveTeamStats({ dominant, hopeless });
+  const std::vector<DerivedTeamStats> derived = DeriveTeamStats({ dominant, hopeless });
 
-  for (const TeamStats& s : derived)
+  for (const DerivedTeamStats& s : derived)
   {
     CHECK(s.attack >= 5.0);
     CHECK(s.attack <= 95.0);
@@ -144,8 +144,8 @@ TEST_CASE("league_strength_offset shifts attack/defense/midfield but not discipl
 {
   const std::vector<TeamRawStats> teams = { MakeRaw("Team A"), MakeRaw("Team B") };
 
-  const std::vector<TeamStats> baseline = DeriveTeamStats(teams);
-  const std::vector<TeamStats> shifted = DeriveTeamStats(teams, -8.0);
+  const std::vector<DerivedTeamStats> baseline = DeriveTeamStats(teams);
+  const std::vector<DerivedTeamStats> shifted = DeriveTeamStats(teams, -8.0);
 
   REQUIRE(shifted.size() == baseline.size());
   for (std::size_t i = 0; i < baseline.size(); ++i)
@@ -163,16 +163,16 @@ TEST_CASE("league_strength_offset stays clamped to [5,95] even at the extremes",
 {
   const std::vector<TeamRawStats> teams = { MakeRaw("Team A"), MakeRaw("Team B") };
 
-  const std::vector<TeamStats> pushed_down = DeriveTeamStats(teams, -100.0);
-  const std::vector<TeamStats> pushed_up = DeriveTeamStats(teams, 100.0);
+  const std::vector<DerivedTeamStats> pushed_down = DeriveTeamStats(teams, -100.0);
+  const std::vector<DerivedTeamStats> pushed_up = DeriveTeamStats(teams, 100.0);
 
-  for (const TeamStats& s : pushed_down)
+  for (const DerivedTeamStats& s : pushed_down)
   {
     CHECK(s.attack == 5.0);
     CHECK(s.defense == 5.0);
     CHECK(s.midfield == 5.0);
   }
-  for (const TeamStats& s : pushed_up)
+  for (const DerivedTeamStats& s : pushed_up)
   {
     CHECK(s.attack == 95.0);
     CHECK(s.defense == 95.0);
@@ -182,9 +182,10 @@ TEST_CASE("league_strength_offset stays clamped to [5,95] even at the extremes",
 
 TEST_CASE("form, stamina and morale are left at neutral defaults", "[team_stats_deriver]")
 {
-  const std::vector<TeamStats> derived = DeriveTeamStats({ MakeRaw("Team A"), MakeRaw("Team B") });
+  const std::vector<DerivedTeamStats> derived =
+    DeriveTeamStats({ MakeRaw("Team A"), MakeRaw("Team B") });
 
-  for (const TeamStats& s : derived)
+  for (const DerivedTeamStats& s : derived)
   {
     CHECK(s.form == 0.0);
     CHECK(s.stamina == 100.0);
