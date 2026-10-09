@@ -221,3 +221,39 @@ TEST_CASE("A much stronger team tops the table", "[championship][smoke]")
 
   CHECK(championship.Standings().front().team == "Team 3");
 }
+
+TEST_CASE("A full 20-team double round robin plays a whole league season", "[championship][smoke]")
+{
+  Championship championship{ MakeTeams(20), Seeded() };
+  REQUIRE(championship.RoundCount() == 38);
+  championship.SimulateSeason();
+
+  CHECK(championship.IsFinished());
+  CHECK(championship.RoundsPlayed() == 38);
+  REQUIRE(championship.Results().size() == 380);
+
+  int total_goals = 0;
+  for (const MatchRecord& record : championship.Results())
+  {
+    total_goals += record.home_goals + record.away_goals;
+  }
+  // Real top-flight leagues average roughly 2.5 goals a game; this is only a
+  // loose band to catch an engine that has drifted wildly off.
+  const double goals_per_game = static_cast<double>(total_goals) / 380.0;
+  CHECK(goals_per_game > 1.0);
+  CHECK(goals_per_game < 5.0);
+
+  for (const StandingsEntry& entry : championship.Standings())
+  {
+    CHECK(entry.played == 38);
+  }
+}
+
+TEST_CASE("An unseeded championship still plays to completion", "[championship]")
+{
+  Championship championship{ MakeTeams(4) };
+  championship.SimulateSeason();
+
+  CHECK(championship.IsFinished());
+  CHECK(championship.Results().size() == 12);
+}
