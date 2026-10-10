@@ -199,13 +199,12 @@ void footbsim::MatchEngine::MaybeGenerateFoul(bool homeIsDefending, int minute, 
   }
 }
 
-void footbsim::MatchEngine::ResolveMidfieldZone(bool& homeHasBall,
-                                                PitchZone& zone,
+void footbsim::MatchEngine::ResolveMidfieldZone(BallState& ball,
                                                 const MinuteEffectiveStats& eff,
                                                 int minute,
                                                 MatchResult& result)
 {
-  const TeamConfig& possessing = homeHasBall ? m_home : m_away;
+  const TeamConfig& possessing = ball.home_has_ball ? m_home : m_away;
   const double p_advance = DuelProbability(eff.possessing_midfield,
                                            eff.defending_midfield,
                                            tuning::ZONE_DUEL_STEEPNESS,
@@ -216,11 +215,11 @@ void footbsim::MatchEngine::ResolveMidfieldZone(bool& homeHasBall,
 
   if (roll < p_advance * advance_fraction)
   {
-    zone = PitchZone::ATTACKING;
+    ball.zone = PitchZone::ATTACKING;
     result.log.push_back({ minute,
                            EventType::PASS,
                            possessing.stats.name,
-                           zone,
+                           ball.zone,
                            messages::AdvanceToAttackingThird(possessing.stats.name) });
   }
   else if (roll < p_advance)
@@ -228,31 +227,30 @@ void footbsim::MatchEngine::ResolveMidfieldZone(bool& homeHasBall,
     result.log.push_back({ minute,
                            EventType::PASS,
                            possessing.stats.name,
-                           zone,
+                           ball.zone,
                            messages::KeepPossessionInMidfield(possessing.stats.name) });
   }
   else
   {
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
-    const TeamConfig& new_possessor = homeHasBall ? m_home : m_away;
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    const TeamConfig& new_possessor = ball.home_has_ball ? m_home : m_away;
     result.log.push_back({ minute,
                            EventType::TURNOVER,
                            new_possessor.stats.name,
-                           zone,
+                           ball.zone,
                            messages::WinBallBackInMidfield(new_possessor.stats.name) });
   }
 }
 
-void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
-                                                 PitchZone& zone,
+void footbsim::MatchEngine::ResolveAttackingZone(BallState& ball,
                                                  const MinuteEffectiveStats& eff,
                                                  int minute,
                                                  MatchResult& result)
 {
-  const TeamConfig& possessing = homeHasBall ? m_home : m_away;
-  const TeamConfig& defending = homeHasBall ? m_away : m_home;
-  TeamMatchState& poss_state = homeHasBall ? result.home_state : result.away_state;
+  const TeamConfig& possessing = ball.home_has_ball ? m_home : m_away;
+  const TeamConfig& defending = ball.home_has_ball ? m_away : m_home;
+  TeamMatchState& poss_state = ball.home_has_ball ? result.home_state : result.away_state;
 
   const double p_pressure = DuelProbability(eff.possessing_attack,
                                             eff.defending_defense,
@@ -262,12 +260,12 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
 
   if (roll >= p_pressure)
   {
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
     result.log.push_back({ minute,
                            EventType::TURNOVER,
                            defending.stats.name,
-                           zone,
+                           ball.zone,
                            messages::ClearLines(defending.stats.name) });
     return;
   }
@@ -282,14 +280,14 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
       result.log.push_back({ minute,
                              EventType::CORNER,
                              possessing.stats.name,
-                             zone,
+                             ball.zone,
                              messages::WinCorner(possessing.stats.name) });
       return;
     }
     result.log.push_back({ minute,
                            EventType::PASS,
                            possessing.stats.name,
-                           zone,
+                           ball.zone,
                            messages::ProbeForOpening(possessing.stats.name) });
     return;
   }
@@ -299,7 +297,7 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
   result.log.push_back({ minute,
                          EventType::SHOT,
                          possessing.stats.name,
-                         zone,
+                         ball.zone,
                          messages::TakeShot(possessing.stats.name) });
 
   const double p_goal =
@@ -314,10 +312,10 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
     result.log.push_back({ minute,
                            EventType::GOAL,
                            possessing.stats.name,
-                           zone,
+                           ball.zone,
                            messages::Goal(possessing.stats.name) });
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
     return;
   }
 
@@ -330,7 +328,7 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
       result.log.push_back({ minute,
                              EventType::CORNER,
                              possessing.stats.name,
-                             zone,
+                             ball.zone,
                              messages::WinCorner(possessing.stats.name) });
       // Stay in the attacking zone; corner delivery resolves next tick.
       return;
@@ -338,10 +336,10 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
     result.log.push_back({ minute,
                            EventType::SAVE,
                            defending.stats.name,
-                           zone,
+                           ball.zone,
                            messages::KeeperSave(defending.stats.name) });
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
     return;
   }
 
@@ -350,7 +348,7 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
     result.log.push_back({ minute,
                            EventType::BLOCK,
                            defending.stats.name,
-                           zone,
+                           ball.zone,
                            messages::BlockShot(defending.stats.name) });
     if (m_rng.Bernoulli(tuning::BLOCK_CORNER_CHANCE))
     {
@@ -358,22 +356,22 @@ void footbsim::MatchEngine::ResolveAttackingZone(bool& homeHasBall,
       result.log.push_back({ minute,
                              EventType::CORNER,
                              possessing.stats.name,
-                             zone,
+                             ball.zone,
                              messages::WinCorner(possessing.stats.name) });
       return;
     }
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
     return;
   }
 
   result.log.push_back({ minute,
                          EventType::MISS,
                          possessing.stats.name,
-                         zone,
+                         ball.zone,
                          messages::ShotWide(possessing.stats.name) });
-  homeHasBall = !homeHasBall;
-  zone = PitchZone::MIDFIELD;
+  ball.home_has_ball = !ball.home_has_ball;
+  ball.zone = PitchZone::MIDFIELD;
 }
 
 footbsim::MatchResult footbsim::MatchEngine::Simulate()
@@ -381,26 +379,27 @@ footbsim::MatchResult footbsim::MatchEngine::Simulate()
   MatchResult result;
   result.log.push_back({ 0, EventType::KICKOFF, "", PitchZone::MIDFIELD, messages::Kickoff() });
 
-  bool home_has_ball = DecideFirstPossession();
-  PitchZone zone = PitchZone::MIDFIELD;
+  BallState ball{ .home_has_ball = DecideFirstPossession() };
 
   for (int minute = 1; minute <= 90; ++minute)
   {
     if (minute == 45)
     {
-      result.log.push_back({ 45, EventType::HALF_TIME, "", zone, messages::HalfTime() });
+      result.log.push_back({ 45, EventType::HALF_TIME, "", ball.zone, messages::HalfTime() });
     }
 
-    TeamMatchState& poss_state = home_has_ball ? result.home_state : result.away_state;
+    TeamMatchState& poss_state = ball.home_has_ball ? result.home_state : result.away_state;
     poss_state.possession_ticks++;
 
-    MaybeGenerateFoul(!home_has_ball, minute, result);
+    MaybeGenerateFoul(!ball.home_has_ball, minute, result);
 
-    MinuteEffectiveStats eff = ComputeMinuteStats(home_has_ball, minute);
+    MinuteEffectiveStats eff = ComputeMinuteStats(ball.home_has_ball, minute);
 
     // Apply a lasting penalty for a team playing with a man down.
-    const bool poss_has_red = (home_has_ball ? result.home_state : result.away_state).has_red_card;
-    const bool def_has_red = (home_has_ball ? result.away_state : result.home_state).has_red_card;
+    const bool poss_has_red =
+      (ball.home_has_ball ? result.home_state : result.away_state).has_red_card;
+    const bool def_has_red =
+      (ball.home_has_ball ? result.away_state : result.home_state).has_red_card;
     if (poss_has_red)
     {
       eff.possessing_attack *= tuning::RED_CARD_PENALTY;
@@ -412,17 +411,17 @@ footbsim::MatchResult footbsim::MatchEngine::Simulate()
       eff.defending_midfield *= tuning::RED_CARD_PENALTY;
     }
 
-    if (zone == PitchZone::MIDFIELD)
+    if (ball.zone == PitchZone::MIDFIELD)
     {
-      ResolveMidfieldZone(home_has_ball, zone, eff, minute, result);
+      ResolveMidfieldZone(ball, eff, minute, result);
     }
     else
     {
-      ResolveAttackingZone(home_has_ball, zone, eff, minute, result);
+      ResolveAttackingZone(ball, eff, minute, result);
     }
   }
 
-  result.log.push_back({ 90, EventType::FULL_TIME, "", zone, messages::FullTime() });
+  result.log.push_back({ 90, EventType::FULL_TIME, "", ball.zone, messages::FullTime() });
   result.home_goals = result.home_state.goals;
   result.away_goals = result.away_state.goals;
   return result;

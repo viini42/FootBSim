@@ -100,16 +100,21 @@ namespace footbsim
       double defending_midfield = 0.0;
     };
 
+    // Who has the ball and where, updated by the zone resolvers every minute.
+    struct BallState
+    {
+      bool home_has_ball = true;
+      PitchZone zone = PitchZone::MIDFIELD;
+    };
+
     bool DecideFirstPossession();
     MinuteEffectiveStats ComputeMinuteStats(bool homeHasBall, int minute);
     void MaybeGenerateFoul(bool homeIsDefending, int minute, MatchResult& result);
-    void ResolveMidfieldZone(bool& homeHasBall,
-                             PitchZone& zone,
+    void ResolveMidfieldZone(BallState& ball,
                              const MinuteEffectiveStats& eff,
                              int minute,
                              MatchResult& result);
-    void ResolveAttackingZone(bool& homeHasBall,
-                              PitchZone& zone,
+    void ResolveAttackingZone(BallState& ball,
                               const MinuteEffectiveStats& eff,
                               int minute,
                               MatchResult& result);
