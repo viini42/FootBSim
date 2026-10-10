@@ -8,28 +8,20 @@
 
 // ---- Pure statistical primitives -----------------------------------------
 
-double footbsim::EffectiveAttack(const TeamStats& stats,
-                                 double staminaFactor,
-                                 double homeFactor,
-                                 double weatherFactor,
-                                 double aggressionFactor,
-                                 double moraleNoise)
+double footbsim::EffectiveAttack(const TeamStats& stats, const AttackFactors& factors)
 {
   const double form_factor = 1.0 + stats.form / tuning::ATTACK_FORM_SCALE;
-  const double base =
-    stats.attack * form_factor * staminaFactor * homeFactor * weatherFactor * aggressionFactor;
-  return std::max(1.0, base + moraleNoise);
+  const double base = stats.attack * form_factor * factors.stamina * factors.home *
+                      factors.weather * factors.aggression;
+  return std::max(1.0, base + factors.morale_noise);
 }
 
-double footbsim::EffectiveDefense(const TeamStats& stats,
-                                  double staminaFactor,
-                                  double homeFactor,
-                                  double aggressionFactor,
-                                  double moraleNoise)
+double footbsim::EffectiveDefense(const TeamStats& stats, const DefenseFactors& factors)
 {
   const double form_factor = 1.0 + stats.form / tuning::DEFENSE_FORM_SCALE;
-  const double base = stats.defense * form_factor * staminaFactor * homeFactor * aggressionFactor;
-  return std::max(1.0, base + moraleNoise);
+  const double base =
+    stats.defense * form_factor * factors.stamina * factors.home * factors.aggression;
+  return std::max(1.0, base + factors.morale_noise);
 }
 
 double footbsim::StaminaDecayFactor(double baseStamina, int minute)
@@ -133,14 +125,16 @@ footbsim::MatchEngine::ComputeMinuteStats(bool homeHasBall, int minute)
 
   MinuteEffectiveStats eff;
   eff.possessing_attack = EffectiveAttack(possessing.stats,
-                                          stam_poss,
-                                          home_boost,
-                                          weather_factor,
-                                          poss_aggression_attack,
-                                          poss_noise);
+                                          AttackFactors{ .stamina = stam_poss,
+                                                         .home = home_boost,
+                                                         .weather = weather_factor,
+                                                         .aggression = poss_aggression_attack,
+                                                         .morale_noise = poss_noise });
   eff.possessing_midfield = possessing.stats.midfield * stam_poss * home_boost;
-  eff.defending_defense =
-    EffectiveDefense(defending.stats, stam_def, 1.0, def_aggression_defense, def_noise);
+  eff.defending_defense = EffectiveDefense(defending.stats,
+                                           DefenseFactors{ .stamina = stam_def,
+                                                           .aggression = def_aggression_defense,
+                                                           .morale_noise = def_noise });
   eff.defending_midfield = defending.stats.midfield * stam_def;
   return eff;
 }
