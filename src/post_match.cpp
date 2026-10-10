@@ -4,71 +4,66 @@
 
 #include <algorithm>
 
-namespace footbsim
+namespace
 {
 
-  namespace
+  double FormTarget(footbsim::MatchOutcome outcome)
   {
-
-    double FormTarget(MatchOutcome outcome)
+    switch (outcome)
     {
-      switch (outcome)
-      {
-      case MatchOutcome::WIN:
-        return tuning::FORM_TARGET_WIN;
-      case MatchOutcome::DRAW:
-        return tuning::FORM_TARGET_DRAW;
-      case MatchOutcome::LOSS:
-        return tuning::FORM_TARGET_LOSS;
-      }
-      return tuning::FORM_TARGET_DRAW;
+    case footbsim::MatchOutcome::WIN:
+      return footbsim::tuning::FORM_TARGET_WIN;
+    case footbsim::MatchOutcome::DRAW:
+      return footbsim::tuning::FORM_TARGET_DRAW;
+    case footbsim::MatchOutcome::LOSS:
+      return footbsim::tuning::FORM_TARGET_LOSS;
     }
-
-    double MoraleTarget(MatchOutcome outcome)
-    {
-      switch (outcome)
-      {
-      case MatchOutcome::WIN:
-        return tuning::MORALE_TARGET_WIN;
-      case MatchOutcome::DRAW:
-        return tuning::MORALE_TARGET_DRAW;
-      case MatchOutcome::LOSS:
-        return tuning::MORALE_TARGET_LOSS;
-      }
-      return tuning::MORALE_TARGET_DRAW;
-    }
-
-    double MoveToward(double current, double target, double rate)
-    {
-      return current + (target - current) * rate;
-    }
-
-  } // namespace
-
-  MatchOutcome OutcomeFor(int goalsFor, int goalsAgainst)
-  {
-    if (goalsFor > goalsAgainst)
-    {
-      return MatchOutcome::WIN;
-    }
-    return goalsFor == goalsAgainst ? MatchOutcome::DRAW : MatchOutcome::LOSS;
+    return footbsim::tuning::FORM_TARGET_DRAW;
   }
 
-  void ApplyMatchOutcome(TeamStats& stats, MatchOutcome outcome)
+  double MoraleTarget(footbsim::MatchOutcome outcome)
   {
-    stats.form = std::clamp(MoveToward(stats.form, FormTarget(outcome), tuning::FORM_UPDATE_RATE),
-                            tuning::FORM_TARGET_LOSS,
-                            tuning::FORM_TARGET_WIN);
-    stats.morale =
-      std::clamp(MoveToward(stats.morale, MoraleTarget(outcome), tuning::MORALE_UPDATE_RATE),
-                 0.0,
-                 100.0);
+    switch (outcome)
+    {
+    case footbsim::MatchOutcome::WIN:
+      return footbsim::tuning::MORALE_TARGET_WIN;
+    case footbsim::MatchOutcome::DRAW:
+      return footbsim::tuning::MORALE_TARGET_DRAW;
+    case footbsim::MatchOutcome::LOSS:
+      return footbsim::tuning::MORALE_TARGET_LOSS;
+    }
+    return footbsim::tuning::MORALE_TARGET_DRAW;
   }
 
-  void ApplyMatchResult(TeamStats& home, TeamStats& away, const MatchResult& result)
+  double MoveToward(double current, double target, double rate)
   {
-    ApplyMatchOutcome(home, OutcomeFor(result.home_goals, result.away_goals));
-    ApplyMatchOutcome(away, OutcomeFor(result.away_goals, result.home_goals));
+    return current + (target - current) * rate;
   }
 
-} // namespace footbsim
+} // namespace
+
+footbsim::MatchOutcome footbsim::OutcomeFor(int goalsFor, int goalsAgainst)
+{
+  if (goalsFor > goalsAgainst)
+  {
+    return MatchOutcome::WIN;
+  }
+  return goalsFor == goalsAgainst ? MatchOutcome::DRAW : MatchOutcome::LOSS;
+}
+
+void footbsim::ApplyMatchOutcome(TeamStats& stats, MatchOutcome outcome)
+{
+  stats.form = std::clamp(MoveToward(stats.form, FormTarget(outcome), tuning::FORM_UPDATE_RATE),
+                          tuning::FORM_TARGET_LOSS,
+                          tuning::FORM_TARGET_WIN);
+  stats.morale =
+    std::clamp(MoveToward(stats.morale, MoraleTarget(outcome), tuning::MORALE_UPDATE_RATE),
+               0.0,
+               100.0);
+}
+
+void footbsim::ApplyMatchResult(TeamStats& home, TeamStats& away, const MatchResult& result)
+{
+  ApplyMatchOutcome(home, OutcomeFor(result.home_goals, result.away_goals));
+  ApplyMatchOutcome(away, OutcomeFor(result.away_goals, result.home_goals));
+}
