@@ -6,442 +6,423 @@
 #include <algorithm>
 #include <cmath>
 
-namespace footbsim
+// ---- Pure statistical primitives -----------------------------------------
+
+double footbsim::EffectiveAttack(const TeamStats& stats, const AttackFactors& factors)
 {
+  const double form_factor = 1.0 + stats.form / tuning::ATTACK_FORM_SCALE;
+  const double base = stats.attack * form_factor * factors.stamina * factors.home *
+                      factors.weather * factors.aggression;
+  return std::max(1.0, base + factors.morale_noise);
+}
 
-  // ---- Pure statistical primitives -----------------------------------------
+double footbsim::EffectiveDefense(const TeamStats& stats, const DefenseFactors& factors)
+{
+  const double form_factor = 1.0 + stats.form / tuning::DEFENSE_FORM_SCALE;
+  const double base =
+    stats.defense * form_factor * factors.stamina * factors.home * factors.aggression;
+  return std::max(1.0, base + factors.morale_noise);
+}
 
-  double EffectiveAttack(const TeamStats& stats,
-                         double staminaFactor,
-                         double homeFactor,
-                         double weatherFactor,
-                         double aggressionFactor,
-                         double moraleNoise)
+double footbsim::StaminaDecayFactor(double baseStamina, int minute)
+{
+  const double minute_frac = std::clamp(static_cast<double>(minute) / 90.0, 0.0, 1.0);
+  const double fatigue_susceptibility = std::clamp((100.0 - baseStamina) / 100.0, 0.0, 1.0);
+  const double decay =
+    minute_frac * minute_frac *
+    (tuning::STAMINA_DECAY_BASE + tuning::STAMINA_DECAY_FATIGUE_SCALE * fatigue_susceptibility);
+  return std::clamp(1.0 - decay, tuning::STAMINA_DECAY_FLOOR, 1.0);
+}
+
+double footbsim::AggressionAttackFactor(double aggression)
+{
+  const double a = std::clamp(aggression, 0.0, 100.0);
+  return 1.0 + (a - 50.0) /
+                 tuning::AGGRESSION_ATTACK_SCALE; // 0.75 (fully defensive) .. 1.25 (all-out attack)
+}
+
+double footbsim::AggressionDefenseFactor(double aggression)
+{
+  const double a = std::clamp(aggression, 0.0, 100.0);
+  return 1.0 - (a - 50.0) /
+                 tuning::AGGRESSION_DEFENSE_SCALE; // 1.2 (fully defensive) .. 0.8 (all-out attack)
+}
+
+double footbsim::AggressionPressureFactor(double aggression)
+{
+  const double a = std::clamp(aggression, 0.0, 100.0);
+  return 1.0 + (a - 50.0) /
+                 tuning::AGGRESSION_PRESSURE_SCALE; // 0.8 (fully defensive) .. 1.2 (all-out attack)
+}
+
+double footbsim::EffectiveAggression(const TeamConfig& team)
+{
+  return std::clamp(team.stats.aggression + FormationAggressionOffset(team.formation), 0.0, 100.0);
+}
+
+double footbsim::Sigmoid(double x)
+{
+  return 1.0 / (1.0 + std::exp(-x));
+}
+
+double footbsim::DuelProbability(double effectiveAttacker,
+                                 double effectiveDefender,
+                                 double steepness,
+                                 double bias)
+{
+  const double gap = effectiveAttacker - effectiveDefender;
+  const double compressed_gap =
+    std::copysign(std::pow(std::abs(gap), tuning::DUEL_GAP_COMPRESSION_EXPONENT), gap);
+  return Sigmoid(steepness * compressed_gap + bias);
+}
+
+// ---- Engine ---------------------------------------------------------------
+
+footbsim::MatchEngine::MatchEngine(TeamConfig home,
+                                   TeamConfig away,
+                                   MatchContext context,
+                                   std::optional<std::uint64_t> seed) :
+    m_home{ std::move(home) }, m_away{ std::move(away) }, m_context{ context }, m_rng{ seed }
+{
+}
+
+bool footbsim::MatchEngine::DecideFirstPossession()
+{
+  const double home_mid = m_home.stats.midfield * HomeAdvantageMultiplier(m_context.home_advantage);
+  const double away_mid = m_away.stats.midfield;
+  return m_rng.Bernoulli(DuelProbability(home_mid, away_mid, tuning::KICKOFF_DUEL_STEEPNESS));
+}
+
+footbsim::MatchEngine::MinuteEffectiveStats
+footbsim::MatchEngine::ComputeMinuteStats(bool homeHasBall, int minute)
+{
+  const TeamConfig& possessing = homeHasBall ? m_home : m_away;
+  const TeamConfig& defending = homeHasBall ? m_away : m_home;
+
+  const double travel_penalty = TravelFatiguePenalty(m_context.travel_fatigue);
+  const double travel_penalty_possessing = homeHasBall ? 0.0 : travel_penalty;
+  const double travel_penalty_defending = homeHasBall ? travel_penalty : 0.0;
+  // The defending side is the one out of possession this minute, i.e. the
+  // one doing the pressing, so only its own press intensity costs it here.
+  const double press_stamina_cost = PressIntensityStaminaCost(defending.press_intensity);
+
+  const double stam_poss =
+    StaminaDecayFactor(possessing.stats.stamina - travel_penalty_possessing, minute);
+  const double stam_def =
+    StaminaDecayFactor(defending.stats.stamina - travel_penalty_defending - press_stamina_cost,
+                       minute);
+
+  const double home_boost = homeHasBall ? HomeAdvantageMultiplier(m_context.home_advantage) : 1.0;
+  const double weather_factor =
+    WeatherAccuracyFactor(m_context.weather, m_context.weather_severity);
+  const double variance = StakesVarianceFactor(m_context.stakes);
+
+  const double poss_noise = m_rng.Normal(0.0, variance * (100.0 - possessing.stats.morale) / 20.0);
+  const double def_noise = m_rng.Normal(0.0, variance * (100.0 - defending.stats.morale) / 20.0);
+
+  const double poss_aggression_attack = AggressionAttackFactor(EffectiveAggression(possessing));
+  const double def_aggression_defense = AggressionDefenseFactor(EffectiveAggression(defending));
+
+  MinuteEffectiveStats eff;
+  eff.possessing_attack = EffectiveAttack(possessing.stats,
+                                          AttackFactors{ .stamina = stam_poss,
+                                                         .home = home_boost,
+                                                         .weather = weather_factor,
+                                                         .aggression = poss_aggression_attack,
+                                                         .morale_noise = poss_noise });
+  eff.possessing_midfield = possessing.stats.midfield * stam_poss * home_boost;
+  eff.defending_defense = EffectiveDefense(defending.stats,
+                                           DefenseFactors{ .stamina = stam_def,
+                                                           .aggression = def_aggression_defense,
+                                                           .morale_noise = def_noise });
+  eff.defending_midfield = defending.stats.midfield * stam_def;
+  return eff;
+}
+
+void footbsim::MatchEngine::MaybeGenerateFoul(bool homeIsDefending, int minute, MatchResult& result)
+{
+  const TeamConfig& defending = homeIsDefending ? m_home : m_away;
+  TeamMatchState& def_state = homeIsDefending ? result.home_state : result.away_state;
+
+  const double discipline_factor =
+    std::clamp((100.0 - defending.stats.discipline) / 100.0, 0.0, 1.0);
+  const double p_foul =
+    tuning::FOUL_BASE_RATE *
+    (tuning::FOUL_DISCIPLINE_BASE + tuning::FOUL_DISCIPLINE_SCALE * discipline_factor) *
+    AggressionPressureFactor(EffectiveAggression(defending)) *
+    PressIntensityFoulMultiplier(defending.press_intensity);
+
+  if (!m_rng.Bernoulli(p_foul))
   {
-    const double form_factor = 1.0 + stats.form / tuning::ATTACK_FORM_SCALE;
-    const double base =
-      stats.attack * form_factor * staminaFactor * homeFactor * weatherFactor * aggressionFactor;
-    return std::max(1.0, base + moraleNoise);
+    return;
   }
 
-  double EffectiveDefense(const TeamStats& stats,
-                          double staminaFactor,
-                          double homeFactor,
-                          double aggressionFactor,
-                          double moraleNoise)
+  def_state.fouls++;
+  result.log.push_back({ minute,
+                         EventType::FOUL,
+                         defending.stats.name,
+                         PitchZone::MIDFIELD,
+                         messages::ConcedeFoul(defending.stats.name) });
+
+  const double p_card =
+    std::clamp(tuning::CARD_BASE_RATE * RefereeStrictnessMultiplier(m_context.referee_strictness) *
+                 (tuning::CARD_DISCIPLINE_BASE + discipline_factor),
+               0.0,
+               1.0);
+  if (!m_rng.Bernoulli(p_card))
   {
-    const double form_factor = 1.0 + stats.form / tuning::DEFENSE_FORM_SCALE;
-    const double base = stats.defense * form_factor * staminaFactor * homeFactor * aggressionFactor;
-    return std::max(1.0, base + moraleNoise);
+    return;
   }
 
-  double StaminaDecayFactor(double baseStamina, int minute)
+  const bool second_yellow =
+    def_state.yellow_cards >= 1 && m_rng.Bernoulli(tuning::SECOND_YELLOW_CHANCE);
+  const bool straight_red = !second_yellow && m_rng.Bernoulli(tuning::STRAIGHT_RED_CHANCE);
+
+  if (second_yellow || straight_red)
   {
-    const double minute_frac = std::clamp(static_cast<double>(minute) / 90.0, 0.0, 1.0);
-    const double fatigue_susceptibility = std::clamp((100.0 - baseStamina) / 100.0, 0.0, 1.0);
-    const double decay =
-      minute_frac * minute_frac *
-      (tuning::STAMINA_DECAY_BASE + tuning::STAMINA_DECAY_FATIGUE_SCALE * fatigue_susceptibility);
-    return std::clamp(1.0 - decay, tuning::STAMINA_DECAY_FLOOR, 1.0);
+    def_state.red_cards++;
+    def_state.has_red_card = true;
+    const std::string description = second_yellow
+                                      ? messages::SentOffSecondYellow(defending.stats.name)
+                                      : messages::SentOffStraightRed(defending.stats.name);
+    result.log.push_back(
+      { minute, EventType::RED_CARD, defending.stats.name, PitchZone::MIDFIELD, description });
   }
-
-  double AggressionAttackFactor(double aggression)
+  else
   {
-    const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 +
-           (a - 50.0) /
-             tuning::AGGRESSION_ATTACK_SCALE; // 0.75 (fully defensive) .. 1.25 (all-out attack)
-  }
-
-  double AggressionDefenseFactor(double aggression)
-  {
-    const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 -
-           (a - 50.0) /
-             tuning::AGGRESSION_DEFENSE_SCALE; // 1.2 (fully defensive) .. 0.8 (all-out attack)
-  }
-
-  double AggressionPressureFactor(double aggression)
-  {
-    const double a = std::clamp(aggression, 0.0, 100.0);
-    return 1.0 +
-           (a - 50.0) /
-             tuning::AGGRESSION_PRESSURE_SCALE; // 0.8 (fully defensive) .. 1.2 (all-out attack)
-  }
-
-  double EffectiveAggression(const TeamConfig& team)
-  {
-    return std::clamp(team.stats.aggression + FormationAggressionOffset(team.formation),
-                      0.0,
-                      100.0);
-  }
-
-  double Sigmoid(double x)
-  {
-    return 1.0 / (1.0 + std::exp(-x));
-  }
-
-  double
-  DuelProbability(double effectiveAttacker, double effectiveDefender, double steepness, double bias)
-  {
-    const double gap = effectiveAttacker - effectiveDefender;
-    const double compressed_gap =
-      std::copysign(std::pow(std::abs(gap), tuning::DUEL_GAP_COMPRESSION_EXPONENT), gap);
-    return Sigmoid(steepness * compressed_gap + bias);
-  }
-
-  // ---- Engine ---------------------------------------------------------------
-
-  MatchEngine::MatchEngine(TeamConfig home,
-                           TeamConfig away,
-                           MatchContext context,
-                           std::optional<std::uint64_t> seed) :
-      m_home{ std::move(home) }, m_away{ std::move(away) }, m_context{ context }, m_rng{ seed }
-  {
-  }
-
-  bool MatchEngine::DecideFirstPossession()
-  {
-    const double home_mid =
-      m_home.stats.midfield * HomeAdvantageMultiplier(m_context.home_advantage);
-    const double away_mid = m_away.stats.midfield;
-    return m_rng.Bernoulli(DuelProbability(home_mid, away_mid, tuning::KICKOFF_DUEL_STEEPNESS));
-  }
-
-  MatchEngine::MinuteEffectiveStats MatchEngine::ComputeMinuteStats(bool homeHasBall, int minute)
-  {
-    const TeamConfig& possessing = homeHasBall ? m_home : m_away;
-    const TeamConfig& defending = homeHasBall ? m_away : m_home;
-
-    const double travel_penalty = TravelFatiguePenalty(m_context.travel_fatigue);
-    const double travel_penalty_possessing = homeHasBall ? 0.0 : travel_penalty;
-    const double travel_penalty_defending = homeHasBall ? travel_penalty : 0.0;
-    // The defending side is the one out of possession this minute, i.e. the
-    // one doing the pressing, so only its own press intensity costs it here.
-    const double press_stamina_cost = PressIntensityStaminaCost(defending.press_intensity);
-
-    const double stam_poss =
-      StaminaDecayFactor(possessing.stats.stamina - travel_penalty_possessing, minute);
-    const double stam_def =
-      StaminaDecayFactor(defending.stats.stamina - travel_penalty_defending - press_stamina_cost,
-                         minute);
-
-    const double home_boost = homeHasBall ? HomeAdvantageMultiplier(m_context.home_advantage) : 1.0;
-    const double weather_factor =
-      WeatherAccuracyFactor(m_context.weather, m_context.weather_severity);
-    const double variance = StakesVarianceFactor(m_context.stakes);
-
-    const double poss_noise =
-      m_rng.Normal(0.0, variance * (100.0 - possessing.stats.morale) / 20.0);
-    const double def_noise = m_rng.Normal(0.0, variance * (100.0 - defending.stats.morale) / 20.0);
-
-    const double poss_aggression_attack = AggressionAttackFactor(EffectiveAggression(possessing));
-    const double def_aggression_defense = AggressionDefenseFactor(EffectiveAggression(defending));
-
-    MinuteEffectiveStats eff;
-    eff.possessing_attack = EffectiveAttack(possessing.stats,
-                                            stam_poss,
-                                            home_boost,
-                                            weather_factor,
-                                            poss_aggression_attack,
-                                            poss_noise);
-    eff.possessing_midfield = possessing.stats.midfield * stam_poss * home_boost;
-    eff.defending_defense =
-      EffectiveDefense(defending.stats, stam_def, 1.0, def_aggression_defense, def_noise);
-    eff.defending_midfield = defending.stats.midfield * stam_def;
-    return eff;
-  }
-
-  void MatchEngine::MaybeGenerateFoul(bool homeIsDefending, int minute, MatchResult& result)
-  {
-    const TeamConfig& defending = homeIsDefending ? m_home : m_away;
-    TeamMatchState& def_state = homeIsDefending ? result.home_state : result.away_state;
-
-    const double discipline_factor =
-      std::clamp((100.0 - defending.stats.discipline) / 100.0, 0.0, 1.0);
-    const double p_foul =
-      tuning::FOUL_BASE_RATE *
-      (tuning::FOUL_DISCIPLINE_BASE + tuning::FOUL_DISCIPLINE_SCALE * discipline_factor) *
-      AggressionPressureFactor(EffectiveAggression(defending)) *
-      PressIntensityFoulMultiplier(defending.press_intensity);
-
-    if (!m_rng.Bernoulli(p_foul))
-    {
-      return;
-    }
-
-    def_state.fouls++;
+    def_state.yellow_cards++;
     result.log.push_back({ minute,
-                           EventType::FOUL,
+                           EventType::YELLOW_CARD,
                            defending.stats.name,
                            PitchZone::MIDFIELD,
-                           messages::ConcedeFoul(defending.stats.name) });
+                           messages::Booked(defending.stats.name) });
+  }
+}
 
-    const double p_card = std::clamp(tuning::CARD_BASE_RATE *
-                                       RefereeStrictnessMultiplier(m_context.referee_strictness) *
-                                       (tuning::CARD_DISCIPLINE_BASE + discipline_factor),
-                                     0.0,
-                                     1.0);
-    if (!m_rng.Bernoulli(p_card))
+void footbsim::MatchEngine::ResolveMidfieldZone(BallState& ball,
+                                                const MinuteEffectiveStats& eff,
+                                                int minute,
+                                                MatchResult& result)
+{
+  const TeamConfig& possessing = ball.home_has_ball ? m_home : m_away;
+  const double p_advance = DuelProbability(eff.possessing_midfield,
+                                           eff.defending_midfield,
+                                           tuning::ZONE_DUEL_STEEPNESS,
+                                           tuning::POSSESSION_RETENTION_BIAS);
+  const double advance_fraction =
+    std::clamp(tuning::ZONE_ADVANCE_FRACTION * TempoAdvanceMultiplier(possessing.tempo), 0.0, 1.0);
+  const double roll = m_rng.Uniform01();
+
+  if (roll < p_advance * advance_fraction)
+  {
+    ball.zone = PitchZone::ATTACKING;
+    result.log.push_back({ minute,
+                           EventType::PASS,
+                           possessing.stats.name,
+                           ball.zone,
+                           messages::AdvanceToAttackingThird(possessing.stats.name) });
+  }
+  else if (roll < p_advance)
+  {
+    result.log.push_back({ minute,
+                           EventType::PASS,
+                           possessing.stats.name,
+                           ball.zone,
+                           messages::KeepPossessionInMidfield(possessing.stats.name) });
+  }
+  else
+  {
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    const TeamConfig& new_possessor = ball.home_has_ball ? m_home : m_away;
+    result.log.push_back({ minute,
+                           EventType::TURNOVER,
+                           new_possessor.stats.name,
+                           ball.zone,
+                           messages::WinBallBackInMidfield(new_possessor.stats.name) });
+  }
+}
+
+void footbsim::MatchEngine::ResolveAttackingZone(BallState& ball,
+                                                 const MinuteEffectiveStats& eff,
+                                                 int minute,
+                                                 MatchResult& result)
+{
+  const TeamConfig& possessing = ball.home_has_ball ? m_home : m_away;
+  const TeamConfig& defending = ball.home_has_ball ? m_away : m_home;
+  TeamMatchState& poss_state = ball.home_has_ball ? result.home_state : result.away_state;
+
+  const double p_pressure = DuelProbability(eff.possessing_attack,
+                                            eff.defending_defense,
+                                            tuning::ZONE_DUEL_STEEPNESS,
+                                            tuning::POSSESSION_RETENTION_BIAS);
+  const double roll = m_rng.Uniform01();
+
+  if (roll >= p_pressure)
+  {
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    result.log.push_back({ minute,
+                           EventType::TURNOVER,
+                           defending.stats.name,
+                           ball.zone,
+                           messages::ClearLines(defending.stats.name) });
+    return;
+  }
+
+  const double shot_threshold =
+    p_pressure * tuning::SHOT_EAGERNESS * AggressionPressureFactor(EffectiveAggression(possessing));
+  if (roll >= shot_threshold)
+  {
+    if (m_rng.Bernoulli(tuning::PROBE_CORNER_CHANCE))
     {
+      poss_state.corners++;
+      result.log.push_back({ minute,
+                             EventType::CORNER,
+                             possessing.stats.name,
+                             ball.zone,
+                             messages::WinCorner(possessing.stats.name) });
       return;
     }
+    result.log.push_back({ minute,
+                           EventType::PASS,
+                           possessing.stats.name,
+                           ball.zone,
+                           messages::ProbeForOpening(possessing.stats.name) });
+    return;
+  }
 
-    const bool second_yellow =
-      def_state.yellow_cards >= 1 && m_rng.Bernoulli(tuning::SECOND_YELLOW_CHANCE);
-    const bool straight_red = !second_yellow && m_rng.Bernoulli(tuning::STRAIGHT_RED_CHANCE);
+  // A shot happens.
+  poss_state.shots++;
+  result.log.push_back({ minute,
+                         EventType::SHOT,
+                         possessing.stats.name,
+                         ball.zone,
+                         messages::TakeShot(possessing.stats.name) });
 
-    if (second_yellow || straight_red)
+  const double p_goal =
+    DuelProbability(eff.possessing_attack, eff.defending_defense, tuning::GOAL_DUEL_STEEPNESS) *
+    tuning::GOAL_CONVERSION_SCALE;
+  const double shot_roll = m_rng.Uniform01();
+
+  if (shot_roll < p_goal)
+  {
+    poss_state.shots_on_target++;
+    poss_state.goals++;
+    result.log.push_back({ minute,
+                           EventType::GOAL,
+                           possessing.stats.name,
+                           ball.zone,
+                           messages::Goal(possessing.stats.name) });
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    return;
+  }
+
+  if (shot_roll < p_goal + tuning::SAVE_BAND)
+  {
+    poss_state.shots_on_target++;
+    if (m_rng.Bernoulli(tuning::SAVE_CORNER_CHANCE))
     {
-      def_state.red_cards++;
-      def_state.has_red_card = true;
-      const std::string description = second_yellow
-                                        ? messages::SentOffSecondYellow(defending.stats.name)
-                                        : messages::SentOffStraightRed(defending.stats.name);
-      result.log.push_back(
-        { minute, EventType::RED_CARD, defending.stats.name, PitchZone::MIDFIELD, description });
+      poss_state.corners++;
+      result.log.push_back({ minute,
+                             EventType::CORNER,
+                             possessing.stats.name,
+                             ball.zone,
+                             messages::WinCorner(possessing.stats.name) });
+      // Stay in the attacking zone; corner delivery resolves next tick.
+      return;
+    }
+    result.log.push_back({ minute,
+                           EventType::SAVE,
+                           defending.stats.name,
+                           ball.zone,
+                           messages::KeeperSave(defending.stats.name) });
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    return;
+  }
+
+  if (shot_roll < p_goal + tuning::SAVE_BAND + tuning::BLOCK_BAND)
+  {
+    result.log.push_back({ minute,
+                           EventType::BLOCK,
+                           defending.stats.name,
+                           ball.zone,
+                           messages::BlockShot(defending.stats.name) });
+    if (m_rng.Bernoulli(tuning::BLOCK_CORNER_CHANCE))
+    {
+      poss_state.corners++;
+      result.log.push_back({ minute,
+                             EventType::CORNER,
+                             possessing.stats.name,
+                             ball.zone,
+                             messages::WinCorner(possessing.stats.name) });
+      return;
+    }
+    ball.home_has_ball = !ball.home_has_ball;
+    ball.zone = PitchZone::MIDFIELD;
+    return;
+  }
+
+  result.log.push_back({ minute,
+                         EventType::MISS,
+                         possessing.stats.name,
+                         ball.zone,
+                         messages::ShotWide(possessing.stats.name) });
+  ball.home_has_ball = !ball.home_has_ball;
+  ball.zone = PitchZone::MIDFIELD;
+}
+
+footbsim::MatchResult footbsim::MatchEngine::Simulate()
+{
+  MatchResult result;
+  result.log.push_back({ 0, EventType::KICKOFF, "", PitchZone::MIDFIELD, messages::Kickoff() });
+
+  BallState ball{ .home_has_ball = DecideFirstPossession() };
+
+  for (int minute = 1; minute <= 90; ++minute)
+  {
+    if (minute == 45)
+    {
+      result.log.push_back({ 45, EventType::HALF_TIME, "", ball.zone, messages::HalfTime() });
+    }
+
+    TeamMatchState& poss_state = ball.home_has_ball ? result.home_state : result.away_state;
+    poss_state.possession_ticks++;
+
+    MaybeGenerateFoul(!ball.home_has_ball, minute, result);
+
+    MinuteEffectiveStats eff = ComputeMinuteStats(ball.home_has_ball, minute);
+
+    // Apply a lasting penalty for a team playing with a man down.
+    const bool poss_has_red =
+      (ball.home_has_ball ? result.home_state : result.away_state).has_red_card;
+    const bool def_has_red =
+      (ball.home_has_ball ? result.away_state : result.home_state).has_red_card;
+    if (poss_has_red)
+    {
+      eff.possessing_attack *= tuning::RED_CARD_PENALTY;
+      eff.possessing_midfield *= tuning::RED_CARD_PENALTY;
+    }
+    if (def_has_red)
+    {
+      eff.defending_defense *= tuning::RED_CARD_PENALTY;
+      eff.defending_midfield *= tuning::RED_CARD_PENALTY;
+    }
+
+    if (ball.zone == PitchZone::MIDFIELD)
+    {
+      ResolveMidfieldZone(ball, eff, minute, result);
     }
     else
     {
-      def_state.yellow_cards++;
-      result.log.push_back({ minute,
-                             EventType::YELLOW_CARD,
-                             defending.stats.name,
-                             PitchZone::MIDFIELD,
-                             messages::Booked(defending.stats.name) });
+      ResolveAttackingZone(ball, eff, minute, result);
     }
   }
 
-  void MatchEngine::ResolveMidfieldZone(bool& homeHasBall,
-                                        PitchZone& zone,
-                                        const MinuteEffectiveStats& eff,
-                                        int minute,
-                                        MatchResult& result)
-  {
-    const TeamConfig& possessing = homeHasBall ? m_home : m_away;
-    const double p_advance = DuelProbability(eff.possessing_midfield,
-                                             eff.defending_midfield,
-                                             tuning::ZONE_DUEL_STEEPNESS,
-                                             tuning::POSSESSION_RETENTION_BIAS);
-    const double advance_fraction =
-      std::clamp(tuning::ZONE_ADVANCE_FRACTION * TempoAdvanceMultiplier(possessing.tempo),
-                 0.0,
-                 1.0);
-    const double roll = m_rng.Uniform01();
-
-    if (roll < p_advance * advance_fraction)
-    {
-      zone = PitchZone::ATTACKING;
-      result.log.push_back({ minute,
-                             EventType::PASS,
-                             possessing.stats.name,
-                             zone,
-                             messages::AdvanceToAttackingThird(possessing.stats.name) });
-    }
-    else if (roll < p_advance)
-    {
-      result.log.push_back({ minute,
-                             EventType::PASS,
-                             possessing.stats.name,
-                             zone,
-                             messages::KeepPossessionInMidfield(possessing.stats.name) });
-    }
-    else
-    {
-      homeHasBall = !homeHasBall;
-      zone = PitchZone::MIDFIELD;
-      const TeamConfig& new_possessor = homeHasBall ? m_home : m_away;
-      result.log.push_back({ minute,
-                             EventType::TURNOVER,
-                             new_possessor.stats.name,
-                             zone,
-                             messages::WinBallBackInMidfield(new_possessor.stats.name) });
-    }
-  }
-
-  void MatchEngine::ResolveAttackingZone(bool& homeHasBall,
-                                         PitchZone& zone,
-                                         const MinuteEffectiveStats& eff,
-                                         int minute,
-                                         MatchResult& result)
-  {
-    const TeamConfig& possessing = homeHasBall ? m_home : m_away;
-    const TeamConfig& defending = homeHasBall ? m_away : m_home;
-    TeamMatchState& poss_state = homeHasBall ? result.home_state : result.away_state;
-
-    const double p_pressure = DuelProbability(eff.possessing_attack,
-                                              eff.defending_defense,
-                                              tuning::ZONE_DUEL_STEEPNESS,
-                                              tuning::POSSESSION_RETENTION_BIAS);
-    const double roll = m_rng.Uniform01();
-
-    if (roll >= p_pressure)
-    {
-      homeHasBall = !homeHasBall;
-      zone = PitchZone::MIDFIELD;
-      result.log.push_back({ minute,
-                             EventType::TURNOVER,
-                             defending.stats.name,
-                             zone,
-                             messages::ClearLines(defending.stats.name) });
-      return;
-    }
-
-    const double shot_threshold = p_pressure * tuning::SHOT_EAGERNESS *
-                                  AggressionPressureFactor(EffectiveAggression(possessing));
-    if (roll >= shot_threshold)
-    {
-      if (m_rng.Bernoulli(tuning::PROBE_CORNER_CHANCE))
-      {
-        poss_state.corners++;
-        result.log.push_back({ minute,
-                               EventType::CORNER,
-                               possessing.stats.name,
-                               zone,
-                               messages::WinCorner(possessing.stats.name) });
-        return;
-      }
-      result.log.push_back({ minute,
-                             EventType::PASS,
-                             possessing.stats.name,
-                             zone,
-                             messages::ProbeForOpening(possessing.stats.name) });
-      return;
-    }
-
-    // A shot happens.
-    poss_state.shots++;
-    result.log.push_back({ minute,
-                           EventType::SHOT,
-                           possessing.stats.name,
-                           zone,
-                           messages::TakeShot(possessing.stats.name) });
-
-    const double p_goal =
-      DuelProbability(eff.possessing_attack, eff.defending_defense, tuning::GOAL_DUEL_STEEPNESS) *
-      tuning::GOAL_CONVERSION_SCALE;
-    const double shot_roll = m_rng.Uniform01();
-
-    if (shot_roll < p_goal)
-    {
-      poss_state.shots_on_target++;
-      poss_state.goals++;
-      result.log.push_back({ minute,
-                             EventType::GOAL,
-                             possessing.stats.name,
-                             zone,
-                             messages::Goal(possessing.stats.name) });
-      homeHasBall = !homeHasBall;
-      zone = PitchZone::MIDFIELD;
-      return;
-    }
-
-    if (shot_roll < p_goal + tuning::SAVE_BAND)
-    {
-      poss_state.shots_on_target++;
-      if (m_rng.Bernoulli(tuning::SAVE_CORNER_CHANCE))
-      {
-        poss_state.corners++;
-        result.log.push_back({ minute,
-                               EventType::CORNER,
-                               possessing.stats.name,
-                               zone,
-                               messages::WinCorner(possessing.stats.name) });
-        // Stay in the attacking zone; corner delivery resolves next tick.
-        return;
-      }
-      result.log.push_back({ minute,
-                             EventType::SAVE,
-                             defending.stats.name,
-                             zone,
-                             messages::KeeperSave(defending.stats.name) });
-      homeHasBall = !homeHasBall;
-      zone = PitchZone::MIDFIELD;
-      return;
-    }
-
-    if (shot_roll < p_goal + tuning::SAVE_BAND + tuning::BLOCK_BAND)
-    {
-      result.log.push_back({ minute,
-                             EventType::BLOCK,
-                             defending.stats.name,
-                             zone,
-                             messages::BlockShot(defending.stats.name) });
-      if (m_rng.Bernoulli(tuning::BLOCK_CORNER_CHANCE))
-      {
-        poss_state.corners++;
-        result.log.push_back({ minute,
-                               EventType::CORNER,
-                               possessing.stats.name,
-                               zone,
-                               messages::WinCorner(possessing.stats.name) });
-        return;
-      }
-      homeHasBall = !homeHasBall;
-      zone = PitchZone::MIDFIELD;
-      return;
-    }
-
-    result.log.push_back({ minute,
-                           EventType::MISS,
-                           possessing.stats.name,
-                           zone,
-                           messages::ShotWide(possessing.stats.name) });
-    homeHasBall = !homeHasBall;
-    zone = PitchZone::MIDFIELD;
-  }
-
-  MatchResult MatchEngine::Simulate()
-  {
-    MatchResult result;
-    result.log.push_back({ 0, EventType::KICKOFF, "", PitchZone::MIDFIELD, messages::Kickoff() });
-
-    bool home_has_ball = DecideFirstPossession();
-    PitchZone zone = PitchZone::MIDFIELD;
-
-    for (int minute = 1; minute <= 90; ++minute)
-    {
-      if (minute == 45)
-      {
-        result.log.push_back({ 45, EventType::HALF_TIME, "", zone, messages::HalfTime() });
-      }
-
-      TeamMatchState& poss_state = home_has_ball ? result.home_state : result.away_state;
-      poss_state.possession_ticks++;
-
-      MaybeGenerateFoul(!home_has_ball, minute, result);
-
-      MinuteEffectiveStats eff = ComputeMinuteStats(home_has_ball, minute);
-
-      // Apply a lasting penalty for a team playing with a man down.
-      const bool poss_has_red =
-        (home_has_ball ? result.home_state : result.away_state).has_red_card;
-      const bool def_has_red = (home_has_ball ? result.away_state : result.home_state).has_red_card;
-      if (poss_has_red)
-      {
-        eff.possessing_attack *= tuning::RED_CARD_PENALTY;
-        eff.possessing_midfield *= tuning::RED_CARD_PENALTY;
-      }
-      if (def_has_red)
-      {
-        eff.defending_defense *= tuning::RED_CARD_PENALTY;
-        eff.defending_midfield *= tuning::RED_CARD_PENALTY;
-      }
-
-      if (zone == PitchZone::MIDFIELD)
-      {
-        ResolveMidfieldZone(home_has_ball, zone, eff, minute, result);
-      }
-      else
-      {
-        ResolveAttackingZone(home_has_ball, zone, eff, minute, result);
-      }
-    }
-
-    result.log.push_back({ 90, EventType::FULL_TIME, "", zone, messages::FullTime() });
-    result.home_goals = result.home_state.goals;
-    result.away_goals = result.away_state.goals;
-    return result;
-  }
-
-} // namespace footbsim
+  result.log.push_back({ 90, EventType::FULL_TIME, "", ball.zone, messages::FullTime() });
+  result.home_goals = result.home_state.goals;
+  result.away_goals = result.away_state.goals;
+  return result;
+}

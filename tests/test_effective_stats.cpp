@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+using footbsim::AttackFactors;
 using footbsim::TeamConfig;
 using footbsim::TeamStats;
 
@@ -16,13 +17,8 @@ TEST_CASE("higher attack stat yields higher effective attack", "[effective_stats
   TeamStats strong = weak;
   strong.attack = 80;
 
-  const double eff_weak = footbsim::EffectiveAttack(weak,
-                                                    /*staminaFactor=*/1.0,
-                                                    /*homeFactor=*/1.0,
-                                                    /*weatherFactor=*/1.0,
-                                                    /*aggressionFactor=*/1.0,
-                                                    /*moraleNoise=*/0.0);
-  const double eff_strong = footbsim::EffectiveAttack(strong, 1.0, 1.0, 1.0, 1.0, 0.0);
+  const double eff_weak = footbsim::EffectiveAttack(weak, AttackFactors{});
+  const double eff_strong = footbsim::EffectiveAttack(strong, AttackFactors{});
 
   CHECK(eff_strong > eff_weak);
 }
@@ -38,8 +34,8 @@ TEST_CASE("stamina decay reduces effective stats over the match", "[effective_st
 
   CHECK(late <= early);
 
-  const double eff_early = footbsim::EffectiveAttack(stats, early, 1.0, 1.0, 1.0, 0.0);
-  const double eff_late = footbsim::EffectiveAttack(stats, late, 1.0, 1.0, 1.0, 0.0);
+  const double eff_early = footbsim::EffectiveAttack(stats, AttackFactors{ .stamina = early });
+  const double eff_late = footbsim::EffectiveAttack(stats, AttackFactors{ .stamina = late });
   CHECK(eff_late <= eff_early);
 }
 
@@ -58,8 +54,8 @@ TEST_CASE("home advantage multiplier increases effective attack",
   stats.attack = 60;
   stats.form = 0;
 
-  const double neutral = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.0, 1.0, 1.0, 0.0);
-  const double boosted = footbsim::EffectiveAttack(stats, 1.0, /*homeFactor=*/1.15, 1.0, 1.0, 0.0);
+  const double neutral = footbsim::EffectiveAttack(stats, AttackFactors{ .home = 1.0 });
+  const double boosted = footbsim::EffectiveAttack(stats, AttackFactors{ .home = 1.15 });
 
   CHECK(boosted > neutral);
 }
@@ -71,8 +67,8 @@ TEST_CASE("weather penalty reduces effective attack but not below floor",
   stats.attack = 50;
   stats.form = 0;
 
-  const double clear = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/1.0, 1.0, 0.0);
-  const double stormy = footbsim::EffectiveAttack(stats, 1.0, 1.0, /*weatherFactor=*/0.8, 1.0, 0.0);
+  const double clear = footbsim::EffectiveAttack(stats, AttackFactors{ .weather = 1.0 });
+  const double stormy = footbsim::EffectiveAttack(stats, AttackFactors{ .weather = 0.8 });
 
   CHECK(stormy < clear);
   CHECK(stormy >= 1.0); // floor enforced by std::max in EffectiveAttack

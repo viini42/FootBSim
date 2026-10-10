@@ -17,24 +17,35 @@ namespace footbsim
   // ---- Pure statistical primitives -----------------------------------------
   // Kept free of engine/RNG state so they're trivially unit-testable.
 
-  // Effective attack for one minute of play: base stat scaled by recent form,
-  // stamina, home advantage (1.0 if not applicable), weather accuracy and
-  // tactical aggression, plus a morale-driven noise term (can be negative).
-  double EffectiveAttack(const TeamStats& stats,
-                         double staminaFactor,
-                         double homeFactor,
-                         double weatherFactor,
-                         double aggressionFactor,
-                         double moraleNoise);
+  // Per-minute multipliers layered on a team's base attack, each 1.0 when it
+  // doesn't apply, plus a morale-driven noise term (can be negative).
+  struct AttackFactors
+  {
+    double stamina = 1.0;
+    double home = 1.0;
+    double weather = 1.0;
+    double aggression = 1.0;
+    double morale_noise = 0.0;
+  };
 
-  // Effective defense for one minute of play. No weather penalty (accuracy
-  // doesn't apply to defending) and homeFactor should be 1.0 unless you
-  // deliberately want a home boost to defense too.
-  double EffectiveDefense(const TeamStats& stats,
-                          double staminaFactor,
-                          double homeFactor,
-                          double aggressionFactor,
-                          double moraleNoise);
+  // Same as AttackFactors minus weather: accuracy doesn't apply to defending.
+  // home should stay 1.0 unless you deliberately want a home boost to
+  // defense too.
+  struct DefenseFactors
+  {
+    double stamina = 1.0;
+    double home = 1.0;
+    double aggression = 1.0;
+    double morale_noise = 0.0;
+  };
+
+  // Effective attack for one minute of play: base stat scaled by recent form
+  // and every factor in `factors`, plus its morale noise.
+  double EffectiveAttack(const TeamStats& stats, const AttackFactors& factors);
+
+  // Effective defense for one minute of play, the defending counterpart of
+  // EffectiveAttack.
+  double EffectiveDefense(const TeamStats& stats, const DefenseFactors& factors);
 
   // Multiplier in (0, 1] representing fatigue at the given minute (1-90+).
   // Teams with lower base stamina decay faster and further.
@@ -89,16 +100,21 @@ namespace footbsim
       double defending_midfield = 0.0;
     };
 
+    // Who has the ball and where, updated by the zone resolvers every minute.
+    struct BallState
+    {
+      bool home_has_ball = true;
+      PitchZone zone = PitchZone::MIDFIELD;
+    };
+
     bool DecideFirstPossession();
     MinuteEffectiveStats ComputeMinuteStats(bool homeHasBall, int minute);
     void MaybeGenerateFoul(bool homeIsDefending, int minute, MatchResult& result);
-    void ResolveMidfieldZone(bool& homeHasBall,
-                             PitchZone& zone,
+    void ResolveMidfieldZone(BallState& ball,
                              const MinuteEffectiveStats& eff,
                              int minute,
                              MatchResult& result);
-    void ResolveAttackingZone(bool& homeHasBall,
-                              PitchZone& zone,
+    void ResolveAttackingZone(BallState& ball,
                               const MinuteEffectiveStats& eff,
                               int minute,
                               MatchResult& result);
