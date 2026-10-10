@@ -34,7 +34,7 @@ namespace
 } // namespace
 
 footbsim::MatchContext::MatchContext(const TeamStats& home, const TeamStats& away) :
-    travel_fatigue(DetermineTravelFatigue(home, away))
+    travel_fatigue{ DetermineTravelFatigue(home, away) }
 {
 }
 

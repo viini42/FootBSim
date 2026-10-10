@@ -17,22 +17,22 @@ namespace
 
 } // namespace
 
-footbsim::Rng::Rng(std::optional<std::uint64_t> seed) : m_engine(MakeSeed(seed)) {}
+footbsim::Rng::Rng(std::optional<std::uint64_t> seed) : m_engine{ MakeSeed(seed) } {}
 
 double footbsim::Rng::Uniform01()
 {
-  std::uniform_real_distribution<double> dist(0.0, 1.0);
+  std::uniform_real_distribution<double> dist{ 0.0, 1.0 };
   return dist(m_engine);
 }
 
 bool footbsim::Rng::Bernoulli(double probability)
 {
-  std::bernoulli_distribution dist(std::clamp(probability, 0.0, 1.0));
+  std::bernoulli_distribution dist{ std::clamp(probability, 0.0, 1.0) };
   return dist(m_engine);
 }
 
 double footbsim::Rng::Normal(double mean, double stddev)
 {
-  std::normal_distribution<double> dist(mean, std::max(stddev, 0.0));
+  std::normal_distribution<double> dist{ mean, std::max(stddev, 0.0) };
   return dist(m_engine);
 }

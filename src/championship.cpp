@@ -88,7 +88,9 @@ namespace
   {
     const auto code_points = static_cast<int>(
       std::count_if(name.begin(), name.end(), [](char c) { return (c & 0xC0) != 0x80; }));
-    return name + std::string(static_cast<std::size_t>(std::max(0, NAME_WIDTH - code_points)), ' ');
+    std::string padded = name;
+    padded.append(static_cast<std::size_t>(std::max(0, NAME_WIDTH - code_points)), ' ');
+    return padded;
   }
 
   void PrintColumn(int value)
