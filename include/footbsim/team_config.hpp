@@ -63,10 +63,10 @@ namespace footbsim
 
   // Stamina points subtracted before StaminaDecayFactor for the team
   // currently pressing (i.e. without the ball).
-  double PressIntensityStaminaCost(PressIntensity press_intensity);
+  double PressIntensityStaminaCost(PressIntensity pressIntensity);
 
   // Multiplier on the per-minute foul rate for the pressing team.
-  double PressIntensityFoulMultiplier(PressIntensity press_intensity);
+  double PressIntensityFoulMultiplier(PressIntensity pressIntensity);
 
   // Multiplier on ZONE_ADVANCE_FRACTION: how much of a won midfield duel
   // pushes forward immediately versus recycling possession.

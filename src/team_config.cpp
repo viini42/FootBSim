@@ -18,9 +18,9 @@ double footbsim::FormationAggressionOffset(Formation formation)
   return tuning::FORMATION_FOUR_FOUR_TWO_OFFSET;
 }
 
-double footbsim::PressIntensityStaminaCost(PressIntensity press_intensity)
+double footbsim::PressIntensityStaminaCost(PressIntensity pressIntensity)
 {
-  switch (press_intensity)
+  switch (pressIntensity)
   {
   case PressIntensity::LOW_BLOCK:
     return tuning::PRESS_INTENSITY_LOW_BLOCK_STAMINA_COST;
@@ -32,9 +32,9 @@ double footbsim::PressIntensityStaminaCost(PressIntensity press_intensity)
   return tuning::PRESS_INTENSITY_MEDIUM_STAMINA_COST;
 }
 
-double footbsim::PressIntensityFoulMultiplier(PressIntensity press_intensity)
+double footbsim::PressIntensityFoulMultiplier(PressIntensity pressIntensity)
 {
-  switch (press_intensity)
+  switch (pressIntensity)
   {
   case PressIntensity::LOW_BLOCK:
     return tuning::PRESS_INTENSITY_LOW_BLOCK_FOUL_MULTIPLIER;
