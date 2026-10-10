@@ -1,12 +1,31 @@
 #pragma once
 
-#include "footbsim/team_stats.hpp"
-
 #include <string>
 #include <vector>
 
-namespace footbsim::utils
+namespace team_stats_tool
 {
+
+  // Output of DeriveTeamStats: the same fields, scales and defaults as the
+  // engine's footbsim::TeamStats (include/footbsim/team_stats.hpp), kept as
+  // a separate struct so this tool builds without the main project. Keep the
+  // two in sync when TeamStats changes.
+  struct DerivedTeamStats
+  {
+    std::string name;
+    std::string city;
+    std::string state;
+    std::string region;
+
+    double attack = 50.0;
+    double defense = 50.0;
+    double midfield = 50.0;
+    double form = 0.0;
+    double stamina = 100.0;
+    double discipline = 50.0;
+    double morale = 50.0;
+    double aggression = 50.0;
+  };
 
   // Raw, season-total match statistics for one team -- the numbers you'd
   // read off a standings/stats page or aggregate yourself from a match
@@ -23,8 +42,8 @@ namespace footbsim::utils
     std::string name;
 
     // Home location -- identity/metadata, passed straight through to the
-    // derived TeamStats untouched, not used in any derivation formula.
-    // See TeamStats::city/state/region for the field conventions.
+    // derived stats untouched, not used in any derivation formula.
+    // See footbsim::TeamStats::city/state/region for the field conventions.
     std::string city;
     std::string state;
     std::string region;
@@ -47,10 +66,10 @@ namespace footbsim::utils
     int red_cards = 0;
   };
 
-  // Derives TeamStats::attack/defense/midfield/discipline/aggression for
+  // Derives attack/defense/midfield/discipline/aggression for
   // every team in `teams`. This is the same methodology validated against
   // the full 2025 Campeonato Brasileiro season log -- see the writeup at
-  // the top of apps/cli/brasileirao_2025.hpp for the reasoning and the
+  // docs/team_stats_derivation.md for the reasoning and the
   // prediction-accuracy numbers it was checked against.
   //
   // Every stat is z-scored *across the teams passed in* (50 + 8 standard
@@ -64,7 +83,7 @@ namespace footbsim::utils
   //
   // form, stamina and morale aren't derivable from season aggregates
   // (form and morale are inherently dynamic match-to-match values;
-  // stamina reflects matchday fitness) and are left at TeamStats' neutral
+  // stamina reflects matchday fitness) and are left at DerivedTeamStats' neutral
   // defaults -- set them yourself afterward if you want non-neutral
   // values.
   //
@@ -78,7 +97,7 @@ namespace footbsim::utils
   // offset for the weaker one, then concatenate the two returned vectors.
   // discipline and aggression are style, not competitive strength, so
   // they're unaffected by the offset.
-  std::vector<TeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
-                                          double league_strength_offset = 0.0);
+  std::vector<DerivedTeamStats> DeriveTeamStats(const std::vector<TeamRawStats>& teams,
+                                                double league_strength_offset = 0.0);
 
-} // namespace footbsim::utils
+} // namespace team_stats_tool

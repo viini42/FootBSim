@@ -1,4 +1,4 @@
-#include "footbsim/utils/team_stats_deriver.hpp"
+#include "team_stats_deriver.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
-using footbsim::TeamStats;
-using footbsim::utils::DeriveTeamStats;
-using footbsim::utils::TeamRawStats;
+using team_stats_tool::DerivedTeamStats;
+using team_stats_tool::DeriveTeamStats;
+using team_stats_tool::TeamRawStats;
 
 namespace
 {
@@ -107,7 +107,7 @@ namespace
   // league_offset) only against its own division-mates -- mixing divisions
   // into one DeriveTeamStats() call would defeat its within-batch z-score.
   // Returns results in the same order as `rows`.
-  std::vector<TeamStats> DeriveByDivision(const std::vector<TeamRow>& rows)
+  std::vector<DerivedTeamStats> DeriveByDivision(const std::vector<TeamRow>& rows)
   {
     std::map<double, std::vector<std::size_t>> divisions;
     for (std::size_t i = 0; i < rows.size(); ++i)
@@ -115,7 +115,7 @@ namespace
       divisions[rows[i].league_offset].push_back(i);
     }
 
-    std::vector<TeamStats> derived(rows.size());
+    std::vector<DerivedTeamStats> derived(rows.size());
     for (const auto& [offset, indices] : divisions)
     {
       std::vector<TeamRawStats> division_stats;
@@ -125,7 +125,8 @@ namespace
         division_stats.push_back(rows[i].stats);
       }
 
-      const std::vector<TeamStats> division_derived = DeriveTeamStats(division_stats, offset);
+      const std::vector<DerivedTeamStats> division_derived =
+        DeriveTeamStats(division_stats, offset);
       for (std::size_t j = 0; j < indices.size(); ++j)
       {
         derived[indices[j]] = division_derived[j];
@@ -268,10 +269,10 @@ namespace
     throw std::runtime_error("unknown output format '" + value + "' (expected cpp or csv)");
   }
 
-  void PrintCppRoster(const std::vector<TeamStats>& derived)
+  void PrintCppRoster(const std::vector<DerivedTeamStats>& derived)
   {
     std::cout << "// Paste into a roster header:\n\n";
-    for (const TeamStats& stat : derived)
+    for (const DerivedTeamStats& stat : derived)
     {
       std::cout << "  inline TeamStats " << MakeIdentifier(stat.name) << "()\n";
       std::cout << "  {\n";
@@ -294,17 +295,17 @@ namespace
     }
   }
 
-  void PrintCsvRoster(const std::vector<TeamStats>& derived)
+  void PrintCsvRoster(const std::vector<DerivedTeamStats>& derived)
   {
     std::cout << "name,attack,defense,midfield,discipline,aggression,form,stamina,morale,city,"
                  "state,region\n";
     std::cout << std::fixed << std::setprecision(1);
-    for (const TeamStats& stat : derived)
+    for (const DerivedTeamStats& stat : derived)
     {
       std::cout << stat.name << ',' << stat.attack << ',' << stat.defense << ',' << stat.midfield
                 << ',' << stat.discipline << ',' << stat.aggression << ',' << stat.form << ','
-                << stat.stamina << ',' << stat.morale << ',' << stat.city << ',' << stat.state << ','
-                << stat.region << '\n';
+                << stat.stamina << ',' << stat.morale << ',' << stat.city << ',' << stat.state
+                << ',' << stat.region << '\n';
     }
   }
 
@@ -344,9 +345,9 @@ namespace
               << "50 on everything, since it can only be compared to itself.\n\n"
               << "attack/defense/midfield/discipline/aggression are derived; form,\n"
               << "stamina and morale can't be (they're dynamic, not season constants),\n"
-              << "so they come back at TeamStats' own defaults (0 / 100 / 50). Edit\n"
+              << "so they come back at the engine's TeamStats defaults (0 / 100 / 50). Edit\n"
               << "those by hand afterward if you want non-neutral values.\n\n"
-              << "See apps/team_stats_tool/example_teams.csv for a filled-in example.\n";
+              << "See data/example_teams.csv for a filled-in example.\n";
   }
 
 } // namespace
@@ -390,7 +391,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  const std::vector<TeamStats> derived = DeriveByDivision(rows);
+  const std::vector<DerivedTeamStats> derived = DeriveByDivision(rows);
 
   // The human-readable summary always goes to stderr, not stdout, so
   // stdout stays clean for whichever export format was requested (e.g.
@@ -399,7 +400,7 @@ int main(int argc, char** argv)
   std::cerr << std::left << std::setw(20) << "Team" << std::right << std::setw(6) << "ATT"
             << std::setw(6) << "DEF" << std::setw(6) << "MID" << std::setw(6) << "DISC"
             << std::setw(6) << "AGG" << "\n";
-  for (const TeamStats& stat : derived)
+  for (const DerivedTeamStats& stat : derived)
   {
     std::cerr << std::left << std::setw(20) << stat.name << std::right << std::fixed
               << std::setprecision(1) << std::setw(6) << stat.attack << std::setw(6) << stat.defense

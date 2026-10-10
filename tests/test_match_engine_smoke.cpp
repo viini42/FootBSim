@@ -3,6 +3,9 @@
 #include "footbsim/team_config.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
+#include <set>
+#include <utility>
 
 using footbsim::Formation;
 using footbsim::MatchContext;
@@ -202,4 +205,59 @@ TEST_CASE("direct tempo takes more shots than patient tempo, other things equal"
   }
 
   CHECK(direct_shots > patient_shots);
+}
+
+TEST_CASE("match log agrees with the stat counters across many seeds", "[engine][smoke]")
+{
+  const TeamStats home = MakeTeam("Home FC");
+  const TeamStats away = MakeTeam("Away FC");
+  MatchContext context{ home, away };
+
+  for (std::uint64_t seed = 0; seed < 50; ++seed)
+  {
+    MatchEngine engine{ MakeConfig(home), MakeConfig(away), context, seed };
+    const MatchResult result = engine.Simulate();
+
+    int home_goal_events = 0;
+    int away_goal_events = 0;
+    int last_minute = 0;
+    bool minutes_in_order = true;
+    for (const footbsim::MatchEvent& event : result.log)
+    {
+      minutes_in_order = minutes_in_order && event.minute >= last_minute;
+      last_minute = event.minute;
+      if (event.type == footbsim::EventType::GOAL)
+      {
+        (event.team == home.name ? home_goal_events : away_goal_events)++;
+      }
+    }
+
+    CAPTURE(seed);
+    CHECK(minutes_in_order);
+    CHECK(home_goal_events == result.home_goals);
+    CHECK(away_goal_events == result.away_goals);
+    for (const footbsim::TeamMatchState* state : { &result.home_state, &result.away_state })
+    {
+      CHECK(state->goals <= state->shots_on_target);
+      CHECK(state->shots_on_target <= state->shots);
+      CHECK(state->red_cards <= 11);
+      CHECK(state->has_red_card == (state->red_cards > 0));
+    }
+  }
+}
+
+TEST_CASE("different seeds produce different matches", "[engine][smoke]")
+{
+  const TeamStats home = MakeTeam("Home FC");
+  const TeamStats away = MakeTeam("Away FC");
+  MatchContext context{ home, away };
+
+  std::set<std::pair<int, int>> scorelines;
+  for (std::uint64_t seed = 0; seed < 30; ++seed)
+  {
+    MatchEngine engine{ MakeConfig(home), MakeConfig(away), context, seed };
+    const MatchResult result = engine.Simulate();
+    scorelines.emplace(result.home_goals, result.away_goals);
+  }
+  CHECK(scorelines.size() > 1);
 }
